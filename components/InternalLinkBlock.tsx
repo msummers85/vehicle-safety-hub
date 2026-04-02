@@ -39,13 +39,13 @@ export function InternalLinkBlock({
     },
     {
       label: `Compare ${model}`,
-      href: "#",
-      enabled: false,
+      href: "/compare",
+      enabled: true,
     },
     {
       label: "Vehicles with Zero Recalls",
-      href: "#",
-      enabled: false,
+      href: "/best/zero-recalls",
+      enabled: true,
     },
     {
       label: "View All Makes",

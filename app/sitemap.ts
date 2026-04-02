@@ -26,6 +26,24 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly",
       priority: 0.9,
     },
+    {
+      url: `${BASE_URL}/recalls`,
+      lastModified: now,
+      changeFrequency: "daily",
+      priority: 0.9,
+    },
+    {
+      url: `${BASE_URL}/compare`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
+    {
+      url: `${BASE_URL}/best/zero-recalls`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
     ...makePages,
   ];
 }

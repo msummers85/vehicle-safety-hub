@@ -7,6 +7,7 @@ import { StatBar } from "@/components/StatBar";
 import { RecallCard } from "@/components/RecallCard";
 import { ComplaintTable } from "@/components/ComplaintTable";
 import { InternalLinkBlock } from "@/components/InternalLinkBlock";
+import { MileageChart } from "@/components/MileageChart";
 
 export const revalidate = 86400;
 
@@ -369,6 +370,9 @@ async function VehicleContent({
           </div>
         )}
       </section>
+
+      {/* Depth 2 — Mileage Distribution */}
+      <MileageChart complaints={complaints} />
 
       {/* Depth 3 — Internal Links */}
       <section className="mb-10">

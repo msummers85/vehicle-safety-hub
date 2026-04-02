@@ -5,8 +5,10 @@ import { MAKES_LIST, toSlug } from "@/lib/utils";
 
 type SearchMode = "ymm" | "vin";
 
-const YEARS = Array.from({ length: 30 }, (_, i) =>
-  (new Date().getFullYear() + 1 - i).toString()
+const CURRENT_YEAR = 2026;
+const START_YEAR = 2000;
+const YEARS = Array.from({ length: CURRENT_YEAR - START_YEAR + 1 }, (_, i) =>
+  (CURRENT_YEAR - i).toString()
 );
 
 const MAKES = MAKES_LIST.map((m) => m.name).sort();
