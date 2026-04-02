@@ -281,7 +281,7 @@ async function VehicleContent({
                     {label}
                   </p>
                   {rated ? (
-                    <p className="text-xl" style={{ color: "#248a3d" }}>
+                    <p className="text-base sm:text-xl tracking-wide" style={{ color: "#248a3d" }}>
                       {Array.from({ length: 5 }, (_, i) => (
                         <span key={i} style={{ opacity: i < num ? 1 : 0.25 }}>
                           ★

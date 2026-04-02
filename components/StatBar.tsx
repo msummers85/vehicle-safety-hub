@@ -55,7 +55,7 @@ export function StatBar({ recalls, complaints, overallRating }: StatBarProps) {
           style={{ background: "#248a3d" }}
         />
         {hasRating ? (
-          <p className="text-2xl sm:text-3xl font-bold" style={{ color: "#248a3d" }}>
+          <p className="text-base sm:text-2xl font-bold tracking-wide" style={{ color: "#248a3d" }}>
             {Array.from({ length: 5 }, (_, i) => (
               <span key={i} style={{ opacity: i < ratingNum ? 1 : 0.25 }}>
                 ★
