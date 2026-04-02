@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { getVehicleData } from "@/lib/nhtsa";
 import { fromSlug } from "@/lib/utils";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
@@ -23,10 +24,9 @@ export async function generateMetadata({
   const { make: makeSlug, model: modelSlug, year } = await params;
   const make = fromSlug(makeSlug);
   const model = fromSlug(modelSlug);
-  const { recalls, complaints } = await getVehicleData(make, model, year);
 
   const title = `${year} ${make} ${model} Recalls, Problems & Safety | Vehicle Safety Hub`;
-  const description = `${recalls.length} recalls and ${complaints.length} complaints for the ${year} ${make} ${model}. Check safety ratings, reliability data, and known issues.`;
+  const description = `Check recalls, complaints, and safety ratings for the ${year} ${make} ${model}. Free NHTSA data and known issues.`;
   const url = `https://vehiclesafetyhub.com/${makeSlug}/${modelSlug}/${year}`;
 
   return {
@@ -44,6 +44,45 @@ export async function generateMetadata({
   };
 }
 
+function ContentSkeleton() {
+  return (
+    <>
+      {/* StatBar skeleton */}
+      <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-10">
+        {Array.from({ length: 3 }, (_, i) => (
+          <div
+            key={i}
+            className="rounded-xl p-4 sm:p-5 flex flex-col items-center gap-2 animate-pulse"
+            style={{ background: "var(--color-surface)" }}
+          >
+            <div className="h-2.5 w-2.5 rounded-full bg-gray-200" />
+            <div className="h-8 w-12 rounded bg-gray-200" />
+            <div className="h-4 w-16 rounded bg-gray-200" />
+          </div>
+        ))}
+      </div>
+
+      {/* Recalls skeleton */}
+      <div className="mb-10">
+        <div className="h-6 w-24 rounded bg-gray-200 animate-pulse mb-4" />
+        <div className="space-y-3">
+          {Array.from({ length: 2 }, (_, i) => (
+            <div
+              key={i}
+              className="rounded-xl p-5 animate-pulse"
+              style={{ background: "var(--color-surface)" }}
+            >
+              <div className="h-4 w-48 rounded bg-gray-200 mb-3" />
+              <div className="h-3 w-full rounded bg-gray-200 mb-2" />
+              <div className="h-3 w-3/4 rounded bg-gray-200" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
 export default async function YearMakeModelPage({
   params,
 }: {
@@ -52,6 +91,56 @@ export default async function YearMakeModelPage({
   const { make: makeSlug, model: modelSlug, year } = await params;
   const make = fromSlug(makeSlug);
   const model = fromSlug(modelSlug);
+
+  return (
+    <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8">
+      {/* Breadcrumbs — renders immediately */}
+      <Breadcrumbs
+        items={[
+          { label: "Home", href: "/" },
+          { label: make, href: `/${makeSlug}` },
+          { label: model, href: `/${makeSlug}/${modelSlug}` },
+          { label: year, href: `/${makeSlug}/${modelSlug}/${year}` },
+        ]}
+      />
+
+      {/* Hero — renders immediately */}
+      <div className="mt-6 mb-8">
+        <h1
+          className="text-3xl sm:text-4xl font-semibold tracking-tight"
+          style={{ color: "var(--color-text-primary)" }}
+        >
+          {year} {make} {model} Safety Report
+        </h1>
+        <p
+          className="mt-2 text-lg"
+          style={{ color: "var(--color-text-secondary)" }}
+        >
+          Recalls, complaints, and safety data from NHTSA
+        </p>
+      </div>
+
+      {/* Data-dependent content — streams in */}
+      <Suspense fallback={<ContentSkeleton />}>
+        <VehicleContent make={make} model={model} year={year} makeSlug={makeSlug} modelSlug={modelSlug} />
+      </Suspense>
+    </div>
+  );
+}
+
+async function VehicleContent({
+  make,
+  model,
+  year,
+  makeSlug,
+  modelSlug,
+}: {
+  make: string;
+  model: string;
+  year: string;
+  makeSlug: string;
+  modelSlug: string;
+}) {
   const { recalls, complaints, safetyRating } = await getVehicleData(
     make,
     model,
@@ -124,7 +213,7 @@ export default async function YearMakeModelPage({
   };
 
   return (
-    <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8">
+    <>
       {/* JSON-LD */}
       <script
         type="application/ld+json"
@@ -134,32 +223,6 @@ export default async function YearMakeModelPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
-
-      {/* Breadcrumbs */}
-      <Breadcrumbs
-        items={[
-          { label: "Home", href: "/" },
-          { label: make, href: `/${makeSlug}` },
-          { label: model, href: `/${makeSlug}/${modelSlug}` },
-          { label: year, href: `/${makeSlug}/${modelSlug}/${year}` },
-        ]}
-      />
-
-      {/* Hero */}
-      <div className="mt-6 mb-8">
-        <h1
-          className="text-3xl sm:text-4xl font-semibold tracking-tight"
-          style={{ color: "var(--color-text-primary)" }}
-        >
-          {year} {make} {model} Safety Report
-        </h1>
-        <p
-          className="mt-2 text-lg"
-          style={{ color: "var(--color-text-secondary)" }}
-        >
-          Recalls, complaints, and safety data from NHTSA
-        </p>
-      </div>
 
       {/* Depth 1 — Key Stats */}
       <section className="mb-10">
@@ -310,7 +373,7 @@ export default async function YearMakeModelPage({
         <SectionHeading>All Complaints</SectionHeading>
         <ComplaintTable complaints={complaints} />
       </section>
-    </div>
+    </>
   );
 }
 
