@@ -1,21 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { MAKES_LIST, toSlug } from "@/lib/utils";
 
 type SearchMode = "ymm" | "vin";
 
-// Static data — will be replaced with API-driven data in Session D
 const YEARS = Array.from({ length: 30 }, (_, i) =>
   (new Date().getFullYear() + 1 - i).toString()
 );
 
-const MAKES = [
-  "Acura", "Audi", "BMW", "Buick", "Cadillac", "Chevrolet", "Chrysler",
-  "Dodge", "Fiat", "Ford", "Genesis", "GMC", "Honda", "Hyundai", "Infiniti",
-  "Jaguar", "Jeep", "Kia", "Land Rover", "Lexus", "Lincoln", "Mazda",
-  "Mercedes-Benz", "Mini", "Mitsubishi", "Nissan", "Porsche", "Ram",
-  "Subaru", "Tesla", "Toyota", "Volkswagen", "Volvo",
-];
+const MAKES = MAKES_LIST.map((m) => m.name).sort();
 
 export function VehicleSearch() {
   const [mode, setMode] = useState<SearchMode>("ymm");
@@ -27,8 +21,7 @@ export function VehicleSearch() {
   const handleYMMSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!year || !make || !model) return;
-    const slug = `/${make.toLowerCase().replace(/[\s-]+/g, "-")}/${model.toLowerCase().replace(/[\s-]+/g, "-")}/${year}`;
-    window.location.href = slug;
+    window.location.href = `/${toSlug(make)}/${toSlug(model)}/${year}`;
   };
 
   const handleVINSubmit = (e: React.FormEvent) => {
