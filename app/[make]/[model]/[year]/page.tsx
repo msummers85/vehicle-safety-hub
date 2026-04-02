@@ -224,6 +224,14 @@ async function VehicleContent({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
 
+      {/* Summary sentence */}
+      <p
+        className="text-lg mb-6"
+        style={{ color: "var(--color-text-secondary)" }}
+      >
+        The {year} {make} {model} has {recalls.length} recall{recalls.length !== 1 ? "s" : ""}, {complaints.length} complaint{complaints.length !== 1 ? "s" : ""}{safetyRating && !isNaN(parseInt(safetyRating.OverallRating, 10)) ? `, and a ${safetyRating.OverallRating}-star overall safety rating from NHTSA` : ""}.
+      </p>
+
       {/* Depth 1 — Key Stats */}
       <section className="mb-10">
         <StatBar
