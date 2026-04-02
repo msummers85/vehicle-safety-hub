@@ -52,7 +52,7 @@ export default async function YearMakeModelPage({
   const { make: makeSlug, model: modelSlug, year } = await params;
   const make = fromSlug(makeSlug);
   const model = fromSlug(modelSlug);
-  const { recalls, complaints, investigations } = await getVehicleData(
+  const { recalls, complaints, safetyRating } = await getVehicleData(
     make,
     model,
     year
@@ -166,7 +166,7 @@ export default async function YearMakeModelPage({
         <StatBar
           recalls={recalls.length}
           complaints={complaints.length}
-          investigations={investigations.length}
+          overallRating={safetyRating?.OverallRating ?? null}
         />
       </section>
 
@@ -189,6 +189,69 @@ export default async function YearMakeModelPage({
               <RecallCard key={r.NHTSACampaignNumber} recall={r} />
             ))}
           </div>
+        )}
+      </section>
+
+      {/* Depth 2 — Safety Ratings */}
+      <section className="mb-10">
+        <SectionHeading>Safety Ratings</SectionHeading>
+        {safetyRating ? (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {([
+              { label: "Overall", value: safetyRating.OverallRating },
+              { label: "Front Crash", value: safetyRating.OverallFrontCrashRating },
+              { label: "Side Crash", value: safetyRating.OverallSideCrashRating },
+              { label: "Rollover", value: safetyRating.RolloverRating },
+            ] as const).map(({ label, value }) => {
+              const num = parseInt(value, 10);
+              const rated = !isNaN(num) && num >= 1 && num <= 5;
+              return (
+                <div
+                  key={label}
+                  className="rounded-xl p-4 text-center"
+                  style={{ background: "var(--color-surface)" }}
+                >
+                  <p
+                    className="text-xs font-medium mb-2"
+                    style={{ color: "var(--color-text-secondary)" }}
+                  >
+                    {label}
+                  </p>
+                  {rated ? (
+                    <p className="text-xl" style={{ color: "#248a3d" }}>
+                      {Array.from({ length: 5 }, (_, i) => (
+                        <span key={i} style={{ opacity: i < num ? 1 : 0.25 }}>
+                          ★
+                        </span>
+                      ))}
+                    </p>
+                  ) : (
+                    <p
+                      className="text-sm font-medium"
+                      style={{ color: "var(--color-text-tertiary)" }}
+                    >
+                      Not Rated
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p
+            className="text-sm py-2"
+            style={{ color: "var(--color-text-tertiary)" }}
+          >
+            No NHTSA safety ratings available for the {year} {make} {model}.
+          </p>
+        )}
+        {safetyRating?.VehicleDescription && (
+          <p
+            className="text-xs mt-2"
+            style={{ color: "var(--color-text-tertiary)" }}
+          >
+            Rating for: {safetyRating.VehicleDescription}
+          </p>
         )}
       </section>
 

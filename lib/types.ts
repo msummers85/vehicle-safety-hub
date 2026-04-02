@@ -31,17 +31,13 @@ export interface Complaint {
   modelYear: string;
 }
 
-export interface Investigation {
-  investigationId: string;
-  subject: string;
-  summary: string;
-  components: string;
-  openDate: string;
-  closeDate: string;
-  investigationType: string;
-  make: string;
-  model: string;
-  modelYear: string;
+export interface SafetyRating {
+  OverallRating: string;
+  OverallFrontCrashRating: string;
+  OverallSideCrashRating: string;
+  RolloverRating: string;
+  VehicleDescription: string;
+  VehicleId: number;
 }
 
 export interface VinResult {
@@ -64,5 +60,5 @@ export interface VinResult {
 export interface VehicleData {
   recalls: Recall[];
   complaints: Complaint[];
-  investigations: Investigation[];
+  safetyRating: SafetyRating | null;
 }
