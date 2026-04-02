@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { MAKES_LIST, toSlug } from "@/lib/utils";
 
 type SearchMode = "ymm" | "vin";
@@ -17,6 +17,24 @@ export function VehicleSearch() {
   const [make, setMake] = useState("");
   const [model, setModel] = useState("");
   const [vin, setVin] = useState("");
+
+  const [models, setModels] = useState<string[]>([]);
+  const [modelsLoading, setModelsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!make) {
+      setModels([]);
+      setModel("");
+      return;
+    }
+    setModel("");
+    setModelsLoading(true);
+    fetch(`/api/models?make=${encodeURIComponent(make)}`)
+      .then((r) => r.json())
+      .then((data: string[]) => setModels(data))
+      .catch(() => setModels([]))
+      .finally(() => setModelsLoading(false));
+  }, [make]);
 
   const handleYMMSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,16 +109,12 @@ export function VehicleSearch() {
               placeholder="Make"
               options={MAKES}
             />
-            <input
-              type="text"
+            <ModelCombobox
               value={model}
-              onChange={(e) => setModel(e.target.value)}
-              placeholder="Model"
-              className="flex-1 min-w-0 px-4 py-3 text-sm rounded-xl outline-none"
-              style={{
-                background: "var(--color-surface)",
-                color: "var(--color-text-primary)",
-              }}
+              onChange={setModel}
+              models={models}
+              loading={modelsLoading}
+              disabled={!make}
             />
             <button
               type="submit"
@@ -213,5 +227,129 @@ function Select({
         </option>
       ))}
     </select>
+  );
+}
+
+function ModelCombobox({
+  value,
+  onChange,
+  models,
+  loading,
+  disabled,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  models: string[];
+  loading: boolean;
+  disabled: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const filtered = query
+    ? models.filter((m) => m.toLowerCase().includes(query.toLowerCase()))
+    : models;
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Sync query with selected value
+  useEffect(() => {
+    setQuery(value);
+  }, [value]);
+
+  function selectModel(m: string) {
+    onChange(m);
+    setQuery(m);
+    setOpen(false);
+    inputRef.current?.blur();
+  }
+
+  return (
+    <div ref={wrapperRef} className="flex-1 min-w-0 relative">
+      <input
+        ref={inputRef}
+        type="text"
+        value={query}
+        disabled={disabled}
+        placeholder={loading ? "Loading models…" : disabled ? "Select make first" : "Model"}
+        onChange={(e) => {
+          setQuery(e.target.value);
+          onChange("");
+          setOpen(true);
+        }}
+        onFocus={() => {
+          if (models.length > 0) setOpen(true);
+        }}
+        className="w-full px-4 py-3 text-sm rounded-xl outline-none disabled:opacity-50"
+        style={{
+          background: "var(--color-surface)",
+          color: query ? "var(--color-text-primary)" : "var(--color-text-tertiary)",
+        }}
+        autoComplete="off"
+      />
+      {loading && (
+        <div
+          className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 rounded-full border-2 border-t-transparent animate-spin"
+          style={{ borderColor: "var(--color-border)", borderTopColor: "transparent" }}
+        />
+      )}
+      {open && filtered.length > 0 && (
+        <ul
+          className="absolute z-50 left-0 right-0 mt-1 max-h-60 overflow-y-auto rounded-xl py-1"
+          style={{
+            background: "white",
+            border: "1px solid var(--color-border)",
+            boxShadow: "var(--shadow-md)",
+          }}
+        >
+          {filtered.map((m) => (
+            <li key={m}>
+              <button
+                type="button"
+                onClick={() => selectModel(m)}
+                className="w-full text-left px-4 text-sm transition-colors"
+                style={{
+                  color: "var(--color-text-primary)",
+                  minHeight: "48px",
+                  display: "flex",
+                  alignItems: "center",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "var(--color-surface)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "transparent";
+                }}
+              >
+                {m}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {open && !loading && filtered.length === 0 && query && models.length > 0 && (
+        <div
+          className="absolute z-50 left-0 right-0 mt-1 rounded-xl px-4 py-3 text-sm"
+          style={{
+            background: "white",
+            border: "1px solid var(--color-border)",
+            boxShadow: "var(--shadow-md)",
+            color: "var(--color-text-tertiary)",
+          }}
+        >
+          No models match &ldquo;{query}&rdquo;
+        </div>
+      )}
+    </div>
   );
 }
