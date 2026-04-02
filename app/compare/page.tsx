@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { CompareForm } from "@/components/CompareForm";
 import Link from "next/link";
@@ -54,7 +55,9 @@ export default function CompareLandingPage() {
         </p>
       </div>
 
-      <CompareForm />
+      <Suspense fallback={null}>
+        <CompareForm />
+      </Suspense>
 
       <section className="mt-12">
         <h2

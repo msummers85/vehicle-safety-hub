@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
 import { getVehicleData } from "@/lib/nhtsa";
-import { MAKES_LIST, fromSlug, toSlug } from "@/lib/utils";
+import { MAKES_LIST, fromSlug } from "@/lib/utils";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import type { VehicleData } from "@/lib/types";
 
@@ -12,21 +12,43 @@ type Params = { slug: string };
 
 const CURRENT_YEAR = new Date().getFullYear();
 
-/** Try to split a slug like "toyota-camry" into { make: "Toyota", model: "Camry" }
- *  by matching known make slugs from MAKES_LIST. */
-function parseVehicleSlug(slug: string): { make: string; model: string; makeSlug: string; modelSlug: string } | null {
+interface ParsedVehicle {
+  make: string;
+  model: string;
+  makeSlug: string;
+  modelSlug: string;
+  year: string;
+}
+
+/** Parse "toyota-camry-2024" or "toyota-camry" from a slug segment.
+ *  Matches known make slugs (longest first) then splits model and optional trailing year. */
+function parseVehicleSlug(slug: string): ParsedVehicle | null {
   const sorted = [...MAKES_LIST].sort((a, b) => b.slug.length - a.slug.length);
   for (const m of sorted) {
     if (slug.startsWith(m.slug + "-")) {
-      const modelSlug = slug.slice(m.slug.length + 1);
-      if (modelSlug) {
+      const rest = slug.slice(m.slug.length + 1);
+      if (!rest) continue;
+
+      // Check if rest ends with a 4-digit year
+      const yearMatch = rest.match(/^(.+)-(\d{4})$/);
+      if (yearMatch) {
         return {
           make: m.name,
-          model: fromSlug(modelSlug),
+          model: fromSlug(yearMatch[1]),
           makeSlug: m.slug,
-          modelSlug,
+          modelSlug: yearMatch[1],
+          year: yearMatch[2],
         };
       }
+
+      // No year in slug — will use default
+      return {
+        make: m.name,
+        model: fromSlug(rest),
+        makeSlug: m.slug,
+        modelSlug: rest,
+        year: "",
+      };
     }
   }
   return null;
@@ -144,34 +166,38 @@ export default async function ComparisonPage({
   );
 }
 
+async function resolveYear(
+  make: string,
+  model: string,
+  preferredYear: string
+): Promise<{ data: VehicleData; year: string }> {
+  if (preferredYear) {
+    const data = await getVehicleData(make, model, preferredYear);
+    return { data, year: preferredYear };
+  }
+  // No year specified — try current year, then previous
+  const current = await getVehicleData(make, model, String(CURRENT_YEAR));
+  if (current.recalls.length > 0 || current.complaints.length > 0 || current.safetyRating) {
+    return { data: current, year: String(CURRENT_YEAR) };
+  }
+  const prev = await getVehicleData(make, model, String(CURRENT_YEAR - 1));
+  return { data: prev, year: String(CURRENT_YEAR - 1) };
+}
+
 async function ComparisonContent({
   v1,
   v2,
 }: {
-  v1: { make: string; model: string; makeSlug: string; modelSlug: string };
-  v2: { make: string; model: string; makeSlug: string; modelSlug: string };
+  v1: ParsedVehicle;
+  v2: ParsedVehicle;
 }) {
-  // Try current year first, fall back to previous year
-  const [data1Current, data2Current] = await Promise.all([
-    getVehicleData(v1.make, v1.model, String(CURRENT_YEAR)),
-    getVehicleData(v2.make, v2.model, String(CURRENT_YEAR)),
+  const [res1, res2] = await Promise.all([
+    resolveYear(v1.make, v1.model, v1.year),
+    resolveYear(v2.make, v2.model, v2.year),
   ]);
 
-  let data1: VehicleData = data1Current;
-  let data2: VehicleData = data2Current;
-  let year1 = String(CURRENT_YEAR);
-  let year2 = String(CURRENT_YEAR);
-
-  // If no data for current year, try previous year
-  const prevYear = String(CURRENT_YEAR - 1);
-  if (data1.recalls.length === 0 && data1.complaints.length === 0 && !data1.safetyRating) {
-    data1 = await getVehicleData(v1.make, v1.model, prevYear);
-    year1 = prevYear;
-  }
-  if (data2.recalls.length === 0 && data2.complaints.length === 0 && !data2.safetyRating) {
-    data2 = await getVehicleData(v2.make, v2.model, prevYear);
-    year2 = prevYear;
-  }
+  const { data: data1, year: year1 } = res1;
+  const { data: data2, year: year2 } = res2;
 
   const cats1 = getTopCategories(data1);
   const cats2 = getTopCategories(data2);
@@ -179,7 +205,6 @@ async function ComparisonContent({
   const rating1 = parseRating(data1.safetyRating?.OverallRating);
   const rating2 = parseRating(data2.safetyRating?.OverallRating);
 
-  // Determine winners (lower is better for recalls/complaints, higher is better for rating)
   const recallWinner = data1.recalls.length < data2.recalls.length ? 1 : data2.recalls.length < data1.recalls.length ? 2 : 0;
   const complaintWinner = data1.complaints.length < data2.complaints.length ? 1 : data2.complaints.length < data1.complaints.length ? 2 : 0;
   const ratingWinner = rating1 !== null && rating2 !== null
@@ -188,12 +213,10 @@ async function ComparisonContent({
 
   return (
     <>
-      {/* Year note */}
       <p className="text-xs mb-6" style={{ color: "var(--color-text-tertiary)" }}>
         Comparing {year1} {v1.make} {v1.model} vs {year2} {v2.make} {v2.model}
       </p>
 
-      {/* Stats comparison */}
       <div className="space-y-3 mb-10">
         <CompareRow
           label="Recalls"
@@ -216,7 +239,6 @@ async function ComparisonContent({
         />
       </div>
 
-      {/* Top complaint categories */}
       <h2
         className="text-xl font-semibold mb-4"
         style={{ color: "var(--color-text-primary)" }}
@@ -224,17 +246,10 @@ async function ComparisonContent({
         Top Complaint Categories
       </h2>
       <div className="grid grid-cols-2 gap-4 mb-10">
-        <CategoryList
-          vehicleName={`${v1.make} ${v1.model}`}
-          categories={cats1}
-        />
-        <CategoryList
-          vehicleName={`${v2.make} ${v2.model}`}
-          categories={cats2}
-        />
+        <CategoryList vehicleName={`${v1.make} ${v1.model}`} categories={cats1} />
+        <CategoryList vehicleName={`${v2.make} ${v2.model}`} categories={cats2} />
       </div>
 
-      {/* Links to full reports */}
       <h2
         className="text-xl font-semibold mb-4"
         style={{ color: "var(--color-text-primary)" }}
@@ -245,22 +260,14 @@ async function ComparisonContent({
         <Link
           href={`/${v1.makeSlug}/${v1.modelSlug}/${year1}`}
           className="flex items-center justify-center rounded-xl px-4 py-4 text-sm font-medium no-underline transition-shadow hover:shadow-md"
-          style={{
-            background: "var(--color-surface)",
-            color: "var(--color-blue)",
-            border: "1px solid var(--color-border)",
-          }}
+          style={{ background: "var(--color-surface)", color: "var(--color-blue)", border: "1px solid var(--color-border)" }}
         >
           {year1} {v1.make} {v1.model} Safety Report →
         </Link>
         <Link
           href={`/${v2.makeSlug}/${v2.modelSlug}/${year2}`}
           className="flex items-center justify-center rounded-xl px-4 py-4 text-sm font-medium no-underline transition-shadow hover:shadow-md"
-          style={{
-            background: "var(--color-surface)",
-            color: "var(--color-blue)",
-            border: "1px solid var(--color-border)",
-          }}
+          style={{ background: "var(--color-surface)", color: "var(--color-blue)", border: "1px solid var(--color-border)" }}
         >
           {year2} {v2.make} {v2.model} Safety Report →
         </Link>
@@ -288,40 +295,23 @@ function CompareRow({
     <div className="grid grid-cols-[1fr_auto_1fr] gap-2 items-center">
       <div
         className="rounded-xl px-4 py-4 text-center"
-        style={{
-          background: winner === 1 ? winBg : "var(--color-surface)",
-        }}
+        style={{ background: winner === 1 ? winBg : "var(--color-surface)" }}
       >
         {isRating ? (
-          <span className="text-sm font-semibold" style={{ color: winner === 1 ? "#248a3d" : "var(--color-text-primary)" }}>
-            {value1}
-          </span>
+          <span className="text-sm font-semibold" style={{ color: winner === 1 ? "#248a3d" : "var(--color-text-primary)" }}>{value1}</span>
         ) : (
-          <span className="text-2xl font-bold" style={{ color: winner === 1 ? "#248a3d" : "var(--color-text-primary)" }}>
-            {value1}
-          </span>
+          <span className="text-2xl font-bold" style={{ color: winner === 1 ? "#248a3d" : "var(--color-text-primary)" }}>{value1}</span>
         )}
       </div>
-      <span
-        className="text-xs font-medium px-2 shrink-0"
-        style={{ color: "var(--color-text-tertiary)" }}
-      >
-        {label}
-      </span>
+      <span className="text-xs font-medium px-2 shrink-0" style={{ color: "var(--color-text-tertiary)" }}>{label}</span>
       <div
         className="rounded-xl px-4 py-4 text-center"
-        style={{
-          background: winner === 2 ? winBg : "var(--color-surface)",
-        }}
+        style={{ background: winner === 2 ? winBg : "var(--color-surface)" }}
       >
         {isRating ? (
-          <span className="text-sm font-semibold" style={{ color: winner === 2 ? "#248a3d" : "var(--color-text-primary)" }}>
-            {value2}
-          </span>
+          <span className="text-sm font-semibold" style={{ color: winner === 2 ? "#248a3d" : "var(--color-text-primary)" }}>{value2}</span>
         ) : (
-          <span className="text-2xl font-bold" style={{ color: winner === 2 ? "#248a3d" : "var(--color-text-primary)" }}>
-            {value2}
-          </span>
+          <span className="text-2xl font-bold" style={{ color: winner === 2 ? "#248a3d" : "var(--color-text-primary)" }}>{value2}</span>
         )}
       </div>
     </div>
@@ -336,36 +326,18 @@ function CategoryList({
   categories: { component: string; count: number }[];
 }) {
   return (
-    <div
-      className="rounded-xl p-4"
-      style={{ background: "var(--color-surface)" }}
-    >
-      <p
-        className="text-xs font-semibold mb-3 truncate"
-        style={{ color: "var(--color-text-secondary)" }}
-      >
+    <div className="rounded-xl p-4" style={{ background: "var(--color-surface)" }}>
+      <p className="text-xs font-semibold mb-3 truncate" style={{ color: "var(--color-text-secondary)" }}>
         {vehicleName}
       </p>
       {categories.length === 0 ? (
-        <p className="text-xs" style={{ color: "var(--color-text-tertiary)" }}>
-          No complaints on record
-        </p>
+        <p className="text-xs" style={{ color: "var(--color-text-tertiary)" }}>No complaints on record</p>
       ) : (
         <ul className="space-y-2">
           {categories.map((cat) => (
             <li key={cat.component} className="flex items-center justify-between gap-2">
-              <span
-                className="text-sm truncate"
-                style={{ color: "var(--color-text-primary)" }}
-              >
-                {cat.component}
-              </span>
-              <span
-                className="text-sm tabular-nums shrink-0 font-medium"
-                style={{ color: "var(--color-amber)" }}
-              >
-                {cat.count}
-              </span>
+              <span className="text-sm truncate" style={{ color: "var(--color-text-primary)" }}>{cat.component}</span>
+              <span className="text-sm tabular-nums shrink-0 font-medium" style={{ color: "var(--color-amber)" }}>{cat.count}</span>
             </li>
           ))}
         </ul>
@@ -384,17 +356,12 @@ function InvalidComparison() {
         ]}
       />
       <div className="mt-6">
-        <h1
-          className="text-3xl font-semibold tracking-tight mb-4"
-          style={{ color: "var(--color-text-primary)" }}
-        >
+        <h1 className="text-3xl font-semibold tracking-tight mb-4" style={{ color: "var(--color-text-primary)" }}>
           Invalid Comparison
         </h1>
         <p style={{ color: "var(--color-text-secondary)" }}>
           We couldn&apos;t parse the vehicles from the URL. Please use the{" "}
-          <Link href="/compare" className="underline" style={{ color: "var(--color-blue)" }}>
-            comparison tool
-          </Link>{" "}
+          <Link href="/compare" className="underline" style={{ color: "var(--color-blue)" }}>comparison tool</Link>{" "}
           to select two vehicles.
         </p>
       </div>
@@ -412,9 +379,7 @@ function renderStars(rating: number): string {
   return "★".repeat(rating) + "☆".repeat(5 - rating);
 }
 
-function getTopCategories(
-  data: VehicleData
-): { component: string; count: number }[] {
+function getTopCategories(data: VehicleData): { component: string; count: number }[] {
   const counts = new Map<string, number>();
   for (const c of data.complaints) {
     const name = c.components || "Unknown";

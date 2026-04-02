@@ -4,6 +4,8 @@ interface InternalLinkBlockProps {
   make: string;
   model: string;
   makeSlug: string;
+  modelSlug: string;
+  year: string;
 }
 
 function ArrowIcon() {
@@ -30,6 +32,8 @@ export function InternalLinkBlock({
   make,
   model,
   makeSlug,
+  modelSlug,
+  year,
 }: InternalLinkBlockProps) {
   const links = [
     {
@@ -39,7 +43,7 @@ export function InternalLinkBlock({
     },
     {
       label: `Compare ${model}`,
-      href: "/compare",
+      href: `/compare/?vehicle1=${makeSlug}-${modelSlug}&year=${year}`,
       enabled: true,
     },
     {

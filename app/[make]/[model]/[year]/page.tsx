@@ -377,7 +377,7 @@ async function VehicleContent({
       {/* Depth 3 — Internal Links */}
       <section className="mb-10">
         <SectionHeading>Explore More</SectionHeading>
-        <InternalLinkBlock make={make} model={model} makeSlug={makeSlug} />
+        <InternalLinkBlock make={make} model={model} makeSlug={makeSlug} modelSlug={modelSlug} year={year} />
       </section>
 
       {/* Depth 4 — Full Complaint Table */}

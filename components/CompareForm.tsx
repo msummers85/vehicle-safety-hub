@@ -1,16 +1,50 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { MAKES_LIST, toSlug } from "@/lib/utils";
+import { useSearchParams } from "next/navigation";
+import { MAKES_LIST, fromSlug, toSlug } from "@/lib/utils";
 
 const MAKES = MAKES_LIST.map((m) => m.name).sort();
+const CURRENT_YEAR = 2026;
+const START_YEAR = 2000;
+const YEARS = Array.from({ length: CURRENT_YEAR - START_YEAR + 1 }, (_, i) =>
+  (CURRENT_YEAR - i).toString()
+);
+
+/** Resolve a make slug like "toyota" to the display name "Toyota" */
+function makeFromSlug(slug: string): string {
+  const found = MAKES_LIST.find((m) => m.slug === slug);
+  return found ? found.name : fromSlug(slug);
+}
+
+/** Parse "toyota-camry" into { makeSlug: "toyota", modelSlug: "camry" } using known makes */
+function parseVehicleParam(param: string): { make: string; modelName: string } | null {
+  const sorted = [...MAKES_LIST].sort((a, b) => b.slug.length - a.slug.length);
+  for (const m of sorted) {
+    if (param.startsWith(m.slug + "-")) {
+      const modelSlug = param.slice(m.slug.length + 1);
+      if (modelSlug) return { make: m.name, modelName: fromSlug(modelSlug) };
+    }
+  }
+  return null;
+}
 
 export function CompareForm() {
-  const [make1, setMake1] = useState("");
+  const searchParams = useSearchParams();
+
+  // Parse prefill from query params
+  const vehicle1Param = searchParams.get("vehicle1") ?? "";
+  const yearParam = searchParams.get("year") ?? "";
+  const prefill = vehicle1Param ? parseVehicleParam(vehicle1Param) : null;
+
+  const [year1, setYear1] = useState(yearParam || "");
+  const [make1, setMake1] = useState(prefill?.make ?? "");
   const [model1, setModel1] = useState("");
   const [models1, setModels1] = useState<string[]>([]);
   const [loading1, setLoading1] = useState(false);
+  const pendingModel1 = useRef(prefill?.modelName ?? "");
 
+  const [year2, setYear2] = useState("");
   const [make2, setMake2] = useState("");
   const [model2, setModel2] = useState("");
   const [models2, setModels2] = useState<string[]>([]);
@@ -22,7 +56,17 @@ export function CompareForm() {
     setLoading1(true);
     fetch(`/api/models?make=${encodeURIComponent(make1)}`)
       .then((r) => r.json())
-      .then((data: string[]) => setModels1(data))
+      .then((data: string[]) => {
+        setModels1(data);
+        // Auto-select prefilled model if it exists in the list
+        if (pendingModel1.current) {
+          const match = data.find(
+            (m) => m.toLowerCase() === pendingModel1.current.toLowerCase()
+          );
+          if (match) setModel1(match);
+          pendingModel1.current = "";
+        }
+      })
       .catch(() => setModels1([]))
       .finally(() => setLoading1(false));
   }, [make1]);
@@ -38,12 +82,12 @@ export function CompareForm() {
       .finally(() => setLoading2(false));
   }, [make2]);
 
-  const canCompare = make1 && model1 && make2 && model2;
+  const canCompare = year1 && make1 && model1 && year2 && make2 && model2;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!canCompare) return;
-    const slug = `${toSlug(make1)}-${toSlug(model1)}-vs-${toSlug(make2)}-${toSlug(model2)}`;
+    const slug = `${toSlug(make1)}-${toSlug(model1)}-${year1}-vs-${toSlug(make2)}-${toSlug(model2)}-${year2}`;
     window.location.href = `/compare/${slug}`;
   }
 
@@ -67,6 +111,7 @@ export function CompareForm() {
               Vehicle 1
             </p>
             <div className="space-y-2">
+              <YearSelect value={year1} onChange={setYear1} />
               <MakeSelect value={make1} onChange={setMake1} />
               <ModelCombobox
                 value={model1}
@@ -87,6 +132,7 @@ export function CompareForm() {
               Vehicle 2
             </p>
             <div className="space-y-2">
+              <YearSelect value={year2} onChange={setYear2} />
               <MakeSelect value={make2} onChange={setMake2} />
               <ModelCombobox
                 value={model2}
@@ -119,6 +165,39 @@ export function CompareForm() {
         </button>
       </div>
     </form>
+  );
+}
+
+function YearSelect({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full px-4 py-3 text-sm rounded-xl outline-none appearance-none cursor-pointer"
+      style={{
+        background: "var(--color-surface)",
+        color: value ? "var(--color-text-primary)" : "var(--color-text-tertiary)",
+        backgroundImage: `url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%2386868b' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
+        backgroundRepeat: "no-repeat",
+        backgroundPosition: "right 12px center",
+        paddingRight: "2.5rem",
+      }}
+    >
+      <option value="" disabled>
+        Year
+      </option>
+      {YEARS.map((y) => (
+        <option key={y} value={y}>
+          {y}
+        </option>
+      ))}
+    </select>
   );
 }
 
