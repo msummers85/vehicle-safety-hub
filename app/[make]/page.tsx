@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import Link from "next/link";
-import { getModelsForMake } from "@/lib/nhtsa";
-import { fromSlug } from "@/lib/utils";
+import { getModelsForMake, getComplaints, getSafetyRating } from "@/lib/nhtsa";
+import { fromSlug, toSlug } from "@/lib/utils";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 export const revalidate = 86400;
@@ -36,6 +37,27 @@ export async function generateMetadata({
       type: "website",
     },
   };
+}
+
+function TableSkeleton() {
+  return (
+    <div className="mb-10">
+      <div className="h-6 w-72 rounded bg-gray-200 animate-pulse mb-4" />
+      <div className="rounded-xl overflow-hidden" style={{ border: "1px solid var(--color-border)" }}>
+        {Array.from({ length: 6 }, (_, i) => (
+          <div
+            key={i}
+            className="flex items-center gap-4 px-4 py-3 animate-pulse"
+            style={{ background: i % 2 === 0 ? "white" : "var(--color-surface)" }}
+          >
+            <div className="h-4 w-32 rounded bg-gray-200" />
+            <div className="h-4 w-16 rounded bg-gray-200 ml-auto" />
+            <div className="h-4 w-20 rounded bg-gray-200" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export default async function MakePage({
@@ -73,6 +95,12 @@ export default async function MakePage({
         </p>
       </div>
 
+      {models.length > 0 && (
+        <Suspense fallback={<TableSkeleton />}>
+          <ModelComparisonTable make={make} makeSlug={makeSlug} modelNames={models.slice(0, 15).map((m) => m.name)} />
+        </Suspense>
+      )}
+
       {models.length === 0 ? (
         <p
           className="text-sm py-4"
@@ -106,5 +134,133 @@ export default async function MakePage({
         </div>
       )}
     </div>
+  );
+}
+
+interface ModelRow {
+  name: string;
+  slug: string;
+  complaints: number;
+  year: string;
+  overallRating: string | null;
+}
+
+async function ModelComparisonTable({
+  make,
+  makeSlug,
+  modelNames,
+}: {
+  make: string;
+  makeSlug: string;
+  modelNames: string[];
+}) {
+  const rows = await Promise.all(
+    modelNames.map(async (model): Promise<ModelRow> => {
+      const [complaints2025, rating] = await Promise.all([
+        getComplaints(make, model, "2025"),
+        getSafetyRating(make, model, "2025"),
+      ]);
+
+      if (complaints2025.length > 0) {
+        return {
+          name: model,
+          slug: toSlug(model),
+          complaints: complaints2025.length,
+          year: "2025",
+          overallRating: rating?.OverallRating ?? null,
+        };
+      }
+
+      // Fallback to 2024
+      const [complaints2024, rating2024] = await Promise.all([
+        getComplaints(make, model, "2024"),
+        getSafetyRating(make, model, "2024"),
+      ]);
+
+      return {
+        name: model,
+        slug: toSlug(model),
+        complaints: complaints2024.length,
+        year: "2024",
+        overallRating: rating?.OverallRating ?? rating2024?.OverallRating ?? null,
+      };
+    })
+  );
+
+  // Sort by complaint count descending
+  const sorted = rows.sort((a, b) => b.complaints - a.complaints);
+
+  // Don't show table if all zero
+  if (sorted.every((r) => r.complaints === 0)) return null;
+
+  return (
+    <section className="mb-10">
+      <h2
+        className="text-xl font-semibold mb-4"
+        style={{ color: "var(--color-text-primary)" }}
+      >
+        {make} Models by Complaint Volume
+      </h2>
+
+      <div
+        className="rounded-xl overflow-hidden"
+        style={{ border: "1px solid var(--color-border)" }}
+      >
+        {/* Header */}
+        <div
+          className="grid grid-cols-[1fr_auto_auto] gap-4 px-4 py-2.5 text-xs font-semibold"
+          style={{ background: "var(--color-surface)", color: "var(--color-text-secondary)" }}
+        >
+          <span>Model</span>
+          <span className="w-24 text-right">Complaints</span>
+          <span className="w-24 text-right">Safety Rating</span>
+        </div>
+
+        {/* Rows */}
+        {sorted.map((row, i) => {
+          const ratingNum = row.overallRating ? parseInt(row.overallRating, 10) : NaN;
+          const hasRating = !isNaN(ratingNum) && ratingNum >= 1 && ratingNum <= 5;
+
+          return (
+            <Link
+              key={row.slug}
+              href={`/${makeSlug}/${row.slug}`}
+              className="grid grid-cols-[1fr_auto_auto] gap-4 px-4 py-3 text-sm no-underline transition-colors hover:brightness-95"
+              style={{
+                background: i % 2 === 0 ? "white" : "var(--color-surface)",
+                color: "var(--color-text-primary)",
+              }}
+            >
+              <span className="font-medium truncate">{row.name}</span>
+              <span
+                className="w-24 text-right tabular-nums"
+                style={{ color: row.complaints > 0 ? "#f59e0b" : "var(--color-text-tertiary)" }}
+              >
+                {row.complaints}
+                {row.year !== "2025" && row.complaints > 0 && (
+                  <span
+                    className="text-[10px] ml-1"
+                    style={{ color: "var(--color-text-tertiary)" }}
+                  >
+                    ({row.year})
+                  </span>
+                )}
+              </span>
+              <span className="w-24 text-right">
+                {hasRating ? (
+                  <span className="text-sm" style={{ color: "#248a3d" }}>
+                    {Array.from({ length: 5 }, (_, j) => (
+                      <span key={j} style={{ opacity: j < ratingNum ? 1 : 0.25 }}>★</span>
+                    ))}
+                  </span>
+                ) : (
+                  <span style={{ color: "var(--color-text-tertiary)" }}>—</span>
+                )}
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+    </section>
   );
 }

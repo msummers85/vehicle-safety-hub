@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import Link from "next/link";
+import { getComplaints } from "@/lib/nhtsa";
 import { fromSlug } from "@/lib/utils";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { ComplaintTrendChart } from "@/components/ComplaintTrendChart";
 
 export const revalidate = 86400;
 
@@ -9,6 +12,7 @@ type Params = { make: string; model: string };
 
 const CURRENT_YEAR = 2026;
 const START_YEAR = 2000;
+const TREND_START = 2015;
 
 export async function generateStaticParams() {
   return [];
@@ -39,6 +43,26 @@ export async function generateMetadata({
       type: "website",
     },
   };
+}
+
+function TrendSkeleton() {
+  return (
+    <div className="mb-10">
+      <div className="h-6 w-40 rounded bg-gray-200 animate-pulse mb-4" />
+      <div className="flex items-end gap-1 sm:gap-1.5" style={{ height: "160px" }}>
+        {Array.from({ length: CURRENT_YEAR - TREND_START + 1 }, (_, i) => (
+          <div
+            key={i}
+            className="flex-1 rounded-t animate-pulse"
+            style={{
+              height: `${20 + Math.random() * 60}%`,
+              background: "var(--color-border)",
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export default async function ModelPage({
@@ -81,6 +105,11 @@ export default async function ModelPage({
         </p>
       </div>
 
+      {/* Complaint trend — streams in */}
+      <Suspense fallback={<TrendSkeleton />}>
+        <ComplaintTrend make={make} model={model} />
+      </Suspense>
+
       <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
         {years.map((y) => (
           <Link
@@ -98,4 +127,26 @@ export default async function ModelPage({
       </div>
     </div>
   );
+}
+
+async function ComplaintTrend({
+  make,
+  model,
+}: {
+  make: string;
+  model: string;
+}) {
+  const trendYears = Array.from(
+    { length: CURRENT_YEAR - TREND_START + 1 },
+    (_, i) => String(TREND_START + i)
+  );
+
+  const counts = await Promise.all(
+    trendYears.map(async (year) => {
+      const complaints = await getComplaints(make, model, year);
+      return { year, count: complaints.length };
+    })
+  );
+
+  return <ComplaintTrendChart data={counts} />;
 }
