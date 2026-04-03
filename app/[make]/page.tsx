@@ -246,6 +246,12 @@ async function ModelComparisonTable({
           * 2024 data (no 2025 complaints on file)
         </p>
       )}
+      <p
+        className="mt-3 text-sm italic"
+        style={{ color: "var(--color-text-tertiary)" }}
+      >
+        Vehicles with higher sales volumes typically receive more complaints. This chart shows total reports filed with NHTSA and does not reflect complaint rate per vehicle sold.
+      </p>
     </section>
   );
 }
