@@ -1,6 +1,0 @@
-User-agent: *
-Allow: /
-Disallow: /api/
-Disallow: /vin-lookup/results/
-
-Sitemap: https://vehiclesafetyhub.com/sitemap.xml
