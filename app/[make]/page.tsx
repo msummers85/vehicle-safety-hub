@@ -141,7 +141,6 @@ interface ModelRow {
   name: string;
   slug: string;
   complaints: number;
-  year: string;
 }
 
 async function ModelComparisonTable({
@@ -153,25 +152,19 @@ async function ModelComparisonTable({
   makeSlug: string;
   modelNames: string[];
 }) {
+  const thisYear = new Date().getFullYear();
+  const lastYear = thisYear - 1;
+
   const rows = await Promise.all(
     modelNames.map(async (model): Promise<ModelRow> => {
-      const complaints2025 = await getComplaints(make, model, "2025");
-
-      if (complaints2025.length > 0) {
-        return {
-          name: model,
-          slug: toSlug(model),
-          complaints: complaints2025.length,
-          year: "2025",
-        };
-      }
-
-      const complaints2024 = await getComplaints(make, model, "2024");
+      const [cThis, cLast] = await Promise.all([
+        getComplaints(make, model, String(thisYear)),
+        getComplaints(make, model, String(lastYear)),
+      ]);
       return {
         name: model,
         slug: toSlug(model),
-        complaints: complaints2024.length,
-        year: "2024",
+        complaints: cThis.length + cLast.length,
       };
     })
   );
@@ -192,7 +185,7 @@ async function ModelComparisonTable({
         className="text-xl font-semibold mb-4"
         style={{ color: "var(--color-text-primary)" }}
       >
-        {make} Models with Most Reported Issues
+        {make} Models with Most Reported Issues ({lastYear}–{thisYear})
       </h2>
 
       <div className="space-y-2">
@@ -226,26 +219,10 @@ async function ModelComparisonTable({
               style={{ color: "var(--color-text-secondary)" }}
             >
               {row.complaints}
-              {row.year !== "2025" && (
-                <span
-                  className="text-[10px] ml-0.5"
-                  style={{ color: "var(--color-text-tertiary)" }}
-                >
-                  *
-                </span>
-              )}
             </span>
           </Link>
         ))}
       </div>
-      {withComplaints.some((r) => r.year !== "2025") && (
-        <p
-          className="mt-2 text-xs"
-          style={{ color: "var(--color-text-tertiary)" }}
-        >
-          * 2024 data (no 2025 complaints on file)
-        </p>
-      )}
       <p
         className="mt-3 text-sm italic"
         style={{ color: "var(--color-text-tertiary)" }}
