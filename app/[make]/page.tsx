@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
-import { getModelsForMake, getComplaints, getSafetyRating } from "@/lib/nhtsa";
+import { getModelsForMake, getComplaints } from "@/lib/nhtsa";
 import { fromSlug, toSlug } from "@/lib/utils";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 
@@ -142,7 +142,6 @@ interface ModelRow {
   slug: string;
   complaints: number;
   year: string;
-  overallRating: string | null;
 }
 
 async function ModelComparisonTable({
@@ -156,10 +155,7 @@ async function ModelComparisonTable({
 }) {
   const rows = await Promise.all(
     modelNames.map(async (model): Promise<ModelRow> => {
-      const [complaints2025, rating] = await Promise.all([
-        getComplaints(make, model, "2025"),
-        getSafetyRating(make, model, "2025"),
-      ]);
+      const complaints2025 = await getComplaints(make, model, "2025");
 
       if (complaints2025.length > 0) {
         return {
@@ -167,31 +163,28 @@ async function ModelComparisonTable({
           slug: toSlug(model),
           complaints: complaints2025.length,
           year: "2025",
-          overallRating: rating?.OverallRating ?? null,
         };
       }
 
-      // Fallback to 2024
-      const [complaints2024, rating2024] = await Promise.all([
-        getComplaints(make, model, "2024"),
-        getSafetyRating(make, model, "2024"),
-      ]);
-
+      const complaints2024 = await getComplaints(make, model, "2024");
       return {
         name: model,
         slug: toSlug(model),
         complaints: complaints2024.length,
         year: "2024",
-        overallRating: rating?.OverallRating ?? rating2024?.OverallRating ?? null,
       };
     })
   );
 
-  // Sort by complaint count descending
-  const sorted = rows.sort((a, b) => b.complaints - a.complaints);
+  // Filter to models with complaints, sort descending, cap at 10
+  const withComplaints = rows
+    .filter((r) => r.complaints > 0)
+    .sort((a, b) => b.complaints - a.complaints)
+    .slice(0, 10);
 
-  // Don't show table if all zero
-  if (sorted.every((r) => r.complaints === 0)) return null;
+  if (withComplaints.length < 3) return null;
+
+  const maxCount = withComplaints[0].complaints;
 
   return (
     <section className="mb-10">
@@ -199,68 +192,60 @@ async function ModelComparisonTable({
         className="text-xl font-semibold mb-4"
         style={{ color: "var(--color-text-primary)" }}
       >
-        {make} Models by Complaint Volume
+        {make} Models with Most Reported Issues
       </h2>
 
-      <div
-        className="rounded-xl overflow-hidden"
-        style={{ border: "1px solid var(--color-border)" }}
-      >
-        {/* Header */}
-        <div
-          className="grid grid-cols-[1fr_auto_auto] gap-4 px-4 py-2.5 text-xs font-semibold"
-          style={{ background: "var(--color-surface)", color: "var(--color-text-secondary)" }}
-        >
-          <span>Model</span>
-          <span className="w-24 text-right">Complaints</span>
-          <span className="w-24 text-right">Safety Rating</span>
-        </div>
-
-        {/* Rows */}
-        {sorted.map((row, i) => {
-          const ratingNum = row.overallRating ? parseInt(row.overallRating, 10) : NaN;
-          const hasRating = !isNaN(ratingNum) && ratingNum >= 1 && ratingNum <= 5;
-
-          return (
-            <Link
-              key={row.slug}
-              href={`/${makeSlug}/${row.slug}`}
-              className="grid grid-cols-[1fr_auto_auto] gap-4 px-4 py-3 text-sm no-underline transition-colors hover:brightness-95"
-              style={{
-                background: i % 2 === 0 ? "white" : "var(--color-surface)",
-                color: "var(--color-text-primary)",
-              }}
+      <div className="space-y-2">
+        {withComplaints.map((row) => (
+          <Link
+            key={row.slug}
+            href={`/${makeSlug}/${row.slug}`}
+            className="flex items-center gap-3 no-underline group"
+          >
+            <span
+              className="text-sm font-medium w-32 sm:w-40 shrink-0 truncate transition-colors group-hover:underline"
+              style={{ color: "var(--color-text-primary)" }}
             >
-              <span className="font-medium truncate">{row.name}</span>
-              <span
-                className="w-24 text-right tabular-nums"
-                style={{ color: row.complaints > 0 ? "#f59e0b" : "var(--color-text-tertiary)" }}
-              >
-                {row.complaints}
-                {row.year !== "2025" && row.complaints > 0 && (
-                  <span
-                    className="text-[10px] ml-1"
-                    style={{ color: "var(--color-text-tertiary)" }}
-                  >
-                    ({row.year})
-                  </span>
-                )}
-              </span>
-              <span className="w-24 text-right">
-                {hasRating ? (
-                  <span className="text-sm" style={{ color: "#248a3d" }}>
-                    {Array.from({ length: 5 }, (_, j) => (
-                      <span key={j} style={{ opacity: j < ratingNum ? 1 : 0.25 }}>★</span>
-                    ))}
-                  </span>
-                ) : (
-                  <span style={{ color: "var(--color-text-tertiary)" }}>—</span>
-                )}
-              </span>
-            </Link>
-          );
-        })}
+              {row.name}
+            </span>
+            <div
+              className="flex-1 h-6 rounded-full overflow-hidden"
+              style={{ background: "var(--color-surface)" }}
+            >
+              <div
+                className="h-full rounded-full"
+                style={{
+                  width: `${(row.complaints / maxCount) * 100}%`,
+                  background: "#f59e0b",
+                  minWidth: "4px",
+                }}
+              />
+            </div>
+            <span
+              className="text-sm tabular-nums w-12 text-right shrink-0 font-medium"
+              style={{ color: "var(--color-text-secondary)" }}
+            >
+              {row.complaints}
+              {row.year !== "2025" && (
+                <span
+                  className="text-[10px] ml-0.5"
+                  style={{ color: "var(--color-text-tertiary)" }}
+                >
+                  *
+                </span>
+              )}
+            </span>
+          </Link>
+        ))}
       </div>
+      {withComplaints.some((r) => r.year !== "2025") && (
+        <p
+          className="mt-2 text-xs"
+          style={{ color: "var(--color-text-tertiary)" }}
+        >
+          * 2024 data (no 2025 complaints on file)
+        </p>
+      )}
     </section>
   );
 }
