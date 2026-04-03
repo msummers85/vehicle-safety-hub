@@ -105,12 +105,7 @@ export default async function ModelPage({
         </p>
       </div>
 
-      {/* Complaint trend — streams in */}
-      <Suspense fallback={<TrendSkeleton />}>
-        <ComplaintTrend make={make} model={model} />
-      </Suspense>
-
-      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 mb-10">
         {years.map((y) => (
           <Link
             key={y}
@@ -125,6 +120,11 @@ export default async function ModelPage({
           </Link>
         ))}
       </div>
+
+      {/* Complaint trend — streams in after year cards */}
+      <Suspense fallback={<TrendSkeleton />}>
+        <ComplaintTrend make={make} model={model} />
+      </Suspense>
     </div>
   );
 }
