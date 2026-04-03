@@ -4,6 +4,7 @@ import "./globals.css";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
+import { NavigationProgress } from "@/components/NavigationProgress";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -90,6 +91,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen flex flex-col">
         <GoogleAnalytics />
+        <NavigationProgress />
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />
