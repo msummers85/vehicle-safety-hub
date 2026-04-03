@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense, use } from "react";
 import Link from "next/link";
 import { getModelsForMake, getComplaints } from "@/lib/nhtsa";
+import { ClickableCard } from "@/components/ClickableCard";
 import { fromSlug, toSlug } from "@/lib/utils";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 
@@ -151,7 +152,7 @@ async function ModelCards({
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
       {models.map((m) => (
-        <Link
+        <ClickableCard
           key={m.id}
           href={`/${makeSlug}/${m.slug}`}
           className="flex items-center justify-center px-4 py-4 rounded-xl text-sm font-medium no-underline transition-all hover:shadow-md"
@@ -161,7 +162,7 @@ async function ModelCards({
           }}
         >
           {m.name}
-        </Link>
+        </ClickableCard>
       ))}
     </div>
   );

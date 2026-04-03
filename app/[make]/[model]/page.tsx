@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense, use } from "react";
-import Link from "next/link";
 import { getComplaints } from "@/lib/nhtsa";
+import { ClickableCard } from "@/components/ClickableCard";
 import { fromSlug } from "@/lib/utils";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ComplaintTrendChart } from "@/components/ComplaintTrendChart";
@@ -107,7 +107,7 @@ export default function ModelPage({
 
       <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 mb-10">
         {years.map((y) => (
-          <Link
+          <ClickableCard
             key={y}
             href={`/${makeSlug}/${modelSlug}/${y}`}
             className="flex items-center justify-center px-3 py-3.5 rounded-xl text-sm font-medium no-underline transition-all hover:shadow-md tabular-nums"
@@ -117,7 +117,7 @@ export default function ModelPage({
             }}
           >
             {y}
-          </Link>
+          </ClickableCard>
         ))}
       </div>
 

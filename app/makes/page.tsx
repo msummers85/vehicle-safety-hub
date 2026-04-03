@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { MAKES_LIST } from "@/lib/utils";
+import { ClickableCard } from "@/components/ClickableCard";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 export const revalidate = 86400;
@@ -52,7 +52,7 @@ export default function AllMakesPage() {
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
         {sorted.map((m) => (
-          <Link
+          <ClickableCard
             key={m.slug}
             href={`/${m.slug}`}
             className="flex items-center justify-center px-4 py-4 rounded-xl text-sm font-medium no-underline transition-all hover:shadow-md"
@@ -62,7 +62,7 @@ export default function AllMakesPage() {
             }}
           >
             {m.name}
-          </Link>
+          </ClickableCard>
         ))}
       </div>
     </div>
