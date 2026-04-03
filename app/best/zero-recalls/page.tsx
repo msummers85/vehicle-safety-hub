@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
 import { getVehicleData } from "@/lib/nhtsa";
+import { DataProvenance } from "@/components/DataProvenance";
 import { toSlug } from "@/lib/utils";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 
@@ -101,6 +102,10 @@ export default function ZeroRecallsPage() {
       <Suspense fallback={<ResultsSkeleton />}>
         <ZeroRecallResults />
       </Suspense>
+
+      <div className="mt-8">
+        <DataProvenance />
+      </div>
     </div>
   );
 }

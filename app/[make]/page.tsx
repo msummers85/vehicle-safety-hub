@@ -149,10 +149,27 @@ async function ModelCards({
     );
   }
 
+  const itemListJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: `${make} Models`,
+    itemListElement: models.map((m, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: `${make} ${m.name}`,
+      url: `https://vehiclesafetyhub.com/${makeSlug}/${m.slug}`,
+    })),
+  };
+
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-      {models.map((m) => (
-        <ClickableCard
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
+      />
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+        {models.map((m) => (
+          <ClickableCard
           key={m.id}
           href={`/${makeSlug}/${m.slug}`}
           className="flex items-center justify-center px-4 py-4 rounded-xl text-sm font-medium no-underline transition-all hover:shadow-md"
@@ -164,7 +181,8 @@ async function ModelCards({
           {m.name}
         </ClickableCard>
       ))}
-    </div>
+      </div>
+    </>
   );
 }
 

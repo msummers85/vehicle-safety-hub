@@ -8,6 +8,7 @@ import { RecallCard } from "@/components/RecallCard";
 import { ComplaintTable } from "@/components/ComplaintTable";
 import { InternalLinkBlock } from "@/components/InternalLinkBlock";
 import { MileageChart } from "@/components/MileageChart";
+import { DataProvenance } from "@/components/DataProvenance";
 
 export const revalidate = 86400;
 
@@ -240,6 +241,9 @@ async function VehicleContent({
           complaints={complaints.length}
           overallRating={safetyRating?.OverallRating ?? null}
         />
+        <div className="mt-3">
+          <DataProvenance />
+        </div>
       </section>
 
       {/* Depth 2 — Recalls */}

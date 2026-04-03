@@ -4,6 +4,7 @@ import Link from "next/link";
 import { getRecalls } from "@/lib/nhtsa";
 import { toSlug, formatDate } from "@/lib/utils";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { DataProvenance } from "@/components/DataProvenance";
 import { RecallCard } from "@/components/RecallCard";
 import type { Recall } from "@/lib/types";
 
@@ -81,6 +82,10 @@ export default function RecallsPage() {
       <Suspense fallback={<RecallsSkeleton />}>
         <RecentRecalls />
       </Suspense>
+
+      <div className="mt-8">
+        <DataProvenance />
+      </div>
     </div>
   );
 }

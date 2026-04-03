@@ -4,6 +4,7 @@ import Link from "next/link";
 import { getVehicleData } from "@/lib/nhtsa";
 import { MAKES_LIST, fromSlug } from "@/lib/utils";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { DataProvenance } from "@/components/DataProvenance";
 import type { VehicleData } from "@/lib/types";
 
 export const revalidate = 86400;
@@ -271,6 +272,10 @@ async function ComparisonContent({
         >
           {year2} {v2.make} {v2.model} Safety Report →
         </Link>
+      </div>
+
+      <div className="mt-8">
+        <DataProvenance />
       </div>
     </>
   );

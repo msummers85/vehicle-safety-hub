@@ -79,8 +79,24 @@ export default function ModelPage({
     years.push(y);
   }
 
+  const itemListJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: `${make} ${model} Safety Reports by Year`,
+    itemListElement: years.map((y, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: `${y} ${make} ${model}`,
+      url: `https://vehiclesafetyhub.com/${makeSlug}/${modelSlug}/${y}`,
+    })),
+  };
+
   return (
     <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
+      />
       <Breadcrumbs
         items={[
           { label: "Home", href: "/" },
