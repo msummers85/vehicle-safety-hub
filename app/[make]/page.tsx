@@ -39,20 +39,32 @@ export async function generateMetadata({
   };
 }
 
-function TableSkeleton() {
+function CardsSkeleton() {
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+      {Array.from({ length: 12 }, (_, i) => (
+        <div
+          key={i}
+          className="flex items-center justify-center px-4 py-4 rounded-xl animate-pulse"
+          style={{ background: "var(--color-surface)" }}
+        >
+          <div className="h-4 w-20 rounded bg-gray-200" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ChartSkeleton() {
   return (
     <div className="mb-10">
       <div className="h-6 w-72 rounded bg-gray-200 animate-pulse mb-4" />
-      <div className="rounded-xl overflow-hidden" style={{ border: "1px solid var(--color-border)" }}>
+      <div className="space-y-2">
         {Array.from({ length: 6 }, (_, i) => (
-          <div
-            key={i}
-            className="flex items-center gap-4 px-4 py-3 animate-pulse"
-            style={{ background: i % 2 === 0 ? "white" : "var(--color-surface)" }}
-          >
-            <div className="h-4 w-32 rounded bg-gray-200" />
-            <div className="h-4 w-16 rounded bg-gray-200 ml-auto" />
-            <div className="h-4 w-20 rounded bg-gray-200" />
+          <div key={i} className="flex items-center gap-3 animate-pulse">
+            <div className="h-4 w-32 rounded bg-gray-200 shrink-0" />
+            <div className="flex-1 h-6 rounded-full bg-gray-100" />
+            <div className="h-4 w-8 rounded bg-gray-200 shrink-0" />
           </div>
         ))}
       </div>
@@ -67,12 +79,10 @@ export default async function MakePage({
 }) {
   const { make: makeSlug } = await params;
   const make = fromSlug(makeSlug);
-  const models = (await getModelsForMake(make)).sort((a, b) =>
-    a.name.localeCompare(b.name)
-  );
 
   return (
     <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8">
+      {/* Shell — renders immediately */}
       <Breadcrumbs
         items={[
           { label: "Home", href: "/" },
@@ -95,44 +105,64 @@ export default async function MakePage({
         </p>
       </div>
 
-      {models.length > 0 && (
-        <Suspense fallback={<TableSkeleton />}>
-          <ModelComparisonTable make={make} makeSlug={makeSlug} modelNames={POPULAR_MODELS[make] ?? models.slice(0, 15).map((m) => m.name)} />
-        </Suspense>
-      )}
+      {/* Complaint chart — slow, streams in separately */}
+      <Suspense fallback={<ChartSkeleton />}>
+        <ModelComparisonTable make={make} makeSlug={makeSlug} />
+      </Suspense>
 
-      {models.length === 0 ? (
-        <p
-          className="text-sm py-4"
-          style={{ color: "var(--color-text-tertiary)" }}
+      {/* Model cards — single fast API call, streams in */}
+      <Suspense fallback={<CardsSkeleton />}>
+        <ModelCards make={make} makeSlug={makeSlug} />
+      </Suspense>
+    </div>
+  );
+}
+
+async function ModelCards({
+  make,
+  makeSlug,
+}: {
+  make: string;
+  makeSlug: string;
+}) {
+  const models = (await getModelsForMake(make)).sort((a, b) =>
+    a.name.localeCompare(b.name)
+  );
+
+  if (models.length === 0) {
+    return (
+      <p
+        className="text-sm py-4"
+        style={{ color: "var(--color-text-tertiary)" }}
+      >
+        No models found for {make}. Check the spelling or browse{" "}
+        <Link
+          href="/makes"
+          className="no-underline font-medium"
+          style={{ color: "var(--color-blue)" }}
         >
-          No models found for {make}. Check the spelling or browse{" "}
-          <Link
-            href="/makes"
-            className="no-underline font-medium"
-            style={{ color: "var(--color-blue)" }}
-          >
-            all makes
-          </Link>
-          .
-        </p>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-          {models.map((m) => (
-            <Link
-              key={m.id}
-              href={`/${makeSlug}/${m.slug}`}
-              className="flex items-center justify-center px-4 py-4 rounded-xl text-sm font-medium no-underline transition-all hover:shadow-md"
-              style={{
-                background: "var(--color-surface)",
-                color: "var(--color-text-primary)",
-              }}
-            >
-              {m.name}
-            </Link>
-          ))}
-        </div>
-      )}
+          all makes
+        </Link>
+        .
+      </p>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+      {models.map((m) => (
+        <Link
+          key={m.id}
+          href={`/${makeSlug}/${m.slug}`}
+          className="flex items-center justify-center px-4 py-4 rounded-xl text-sm font-medium no-underline transition-all hover:shadow-md"
+          style={{
+            background: "var(--color-surface)",
+            color: "var(--color-text-primary)",
+          }}
+        >
+          {m.name}
+        </Link>
+      ))}
     </div>
   );
 }
@@ -183,14 +213,21 @@ interface ModelRow {
 async function ModelComparisonTable({
   make,
   makeSlug,
-  modelNames,
 }: {
   make: string;
   makeSlug: string;
-  modelNames: string[];
 }) {
   const thisYear = new Date().getFullYear();
   const lastYear = thisYear - 1;
+
+  // Use curated list if available, otherwise fetch and take first 15
+  let modelNames = POPULAR_MODELS[make];
+  if (!modelNames) {
+    const models = (await getModelsForMake(make)).sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+    modelNames = models.slice(0, 15).map((m) => m.name);
+  }
 
   const rows = await Promise.all(
     modelNames.map(async (model): Promise<ModelRow> => {
