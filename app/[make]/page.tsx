@@ -97,7 +97,7 @@ export default async function MakePage({
 
       {models.length > 0 && (
         <Suspense fallback={<TableSkeleton />}>
-          <ModelComparisonTable make={make} makeSlug={makeSlug} modelNames={models.slice(0, 15).map((m) => m.name)} />
+          <ModelComparisonTable make={make} makeSlug={makeSlug} modelNames={POPULAR_MODELS[make] ?? models.slice(0, 15).map((m) => m.name)} />
         </Suspense>
       )}
 
@@ -137,6 +137,43 @@ export default async function MakePage({
   );
 }
 
+/** Popular models per make for the comparison chart. Falls back to API results for unlisted makes. */
+const POPULAR_MODELS: Record<string, string[]> = {
+  Toyota: ["Camry", "Corolla", "RAV4", "Highlander", "Tacoma", "Tundra", "4Runner", "Prius", "Sienna", "Venza", "Crown", "GR86", "Sequoia", "Supra", "Corolla Cross"],
+  Honda: ["Civic", "Accord", "CR-V", "Pilot", "HR-V", "Odyssey", "Ridgeline", "Passport", "Prologue"],
+  Ford: ["F-150", "Explorer", "Escape", "Bronco", "Maverick", "Mustang", "Edge", "Expedition", "Ranger", "Transit", "Bronco Sport", "F-250", "F-350"],
+  Chevrolet: ["Silverado", "Equinox", "Traverse", "Malibu", "Tahoe", "Suburban", "Colorado", "Trax", "Blazer", "Camaro", "Corvette", "Trailblazer"],
+  Nissan: ["Altima", "Rogue", "Sentra", "Pathfinder", "Frontier", "Murano", "Kicks", "Versa", "Armada", "LEAF", "Titan"],
+  Hyundai: ["Tucson", "Elantra", "Sonata", "Santa Fe", "Kona", "Palisade", "Ioniq 5", "Venue", "Santa Cruz"],
+  Kia: ["Forte", "Sportage", "Telluride", "Sorento", "Seltos", "Soul", "K5", "Carnival", "EV6", "Niro"],
+  BMW: ["3 Series", "5 Series", "X3", "X5", "X1", "4 Series", "7 Series", "X7", "iX", "i4"],
+  "Mercedes-Benz": ["C-Class", "E-Class", "GLC", "GLE", "A-Class", "S-Class", "CLA", "GLB", "GLA", "EQS"],
+  Subaru: ["Outback", "Forester", "Crosstrek", "Impreza", "Ascent", "WRX", "Legacy", "BRZ", "Solterra"],
+  Volkswagen: ["Jetta", "Tiguan", "Atlas", "Taos", "ID.4", "Golf GTI", "Atlas Cross Sport"],
+  Mazda: ["CX-5", "Mazda3", "CX-30", "CX-50", "CX-90", "MX-5 Miata", "CX-9"],
+  Jeep: ["Grand Cherokee", "Wrangler", "Cherokee", "Compass", "Gladiator", "Renegade", "Wagoneer", "Grand Wagoneer"],
+  Dodge: ["Durango", "Charger", "Challenger", "Hornet"],
+  Ram: ["1500", "2500", "3500", "ProMaster"],
+  GMC: ["Sierra", "Terrain", "Acadia", "Yukon", "Canyon", "Hummer EV"],
+  Tesla: ["Model 3", "Model Y", "Model S", "Model X", "Cybertruck"],
+  Lexus: ["RX", "NX", "ES", "IS", "GX", "TX", "UX", "LC", "LS"],
+  Audi: ["A4", "Q5", "A3", "Q7", "A6", "Q3", "e-tron", "Q8"],
+  Volvo: ["XC90", "XC60", "XC40", "S60", "V60", "S90", "C40"],
+  "Land Rover": ["Range Rover", "Range Rover Sport", "Defender", "Discovery", "Range Rover Velar", "Range Rover Evoque"],
+  "Alfa Romeo": ["Giulia", "Stelvio", "Tonale"],
+  Genesis: ["G70", "G80", "G90", "GV70", "GV80", "GV60"],
+  Acura: ["MDX", "RDX", "TLX", "Integra"],
+  Infiniti: ["QX60", "QX80", "QX50", "Q50"],
+  Porsche: ["Cayenne", "Macan", "911", "Taycan", "Panamera"],
+  Lincoln: ["Corsair", "Nautilus", "Aviator", "Navigator"],
+  Cadillac: ["Escalade", "XT5", "XT4", "CT5", "CT4", "Lyriq"],
+  Buick: ["Encore GX", "Enclave", "Envision", "Encore"],
+  Chrysler: ["Pacifica", "300"],
+  Mitsubishi: ["Outlander", "Eclipse Cross", "Mirage"],
+  Fiat: ["500X", "500"],
+  MINI: ["Cooper", "Countryman", "Clubman"],
+};
+
 interface ModelRow {
   name: string;
   slug: string;
@@ -175,7 +212,7 @@ async function ModelComparisonTable({
     .sort((a, b) => b.complaints - a.complaints)
     .slice(0, 10);
 
-  if (withComplaints.length < 3) return null;
+  if (withComplaints.length < 1) return null;
 
   const maxCount = withComplaints[0].complaints;
 

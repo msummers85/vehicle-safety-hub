@@ -5,7 +5,19 @@ export function toSlug(name: string): string {
     .replace(/^-|-$/g, "");
 }
 
+/** Maps slugs to their exact NHTSA API names for makes that don't follow simple title case */
+const MAKE_NAME_MAP: Record<string, string> = {
+  "mercedes-benz": "Mercedes-Benz",
+  "land-rover": "Land Rover",
+  "alfa-romeo": "Alfa Romeo",
+  "bmw": "BMW",
+  "gmc": "GMC",
+  "ram": "Ram",
+  "mini": "MINI",
+};
+
 export function fromSlug(slug: string): string {
+  if (MAKE_NAME_MAP[slug]) return MAKE_NAME_MAP[slug];
   return slug
     .split("-")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
