@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
+import { Suspense, use } from "react";
 import Link from "next/link";
 import { getModelsForMake, getComplaints } from "@/lib/nhtsa";
 import { fromSlug, toSlug } from "@/lib/utils";
@@ -72,12 +72,12 @@ function ChartSkeleton() {
   );
 }
 
-export default async function MakePage({
+export default function MakePage({
   params,
 }: {
   params: Promise<Params>;
 }) {
-  const { make: makeSlug } = await params;
+  const { make: makeSlug } = use(params);
   const make = fromSlug(makeSlug);
 
   return (

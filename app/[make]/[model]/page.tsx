@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
+import { Suspense, use } from "react";
 import Link from "next/link";
 import { getComplaints } from "@/lib/nhtsa";
 import { fromSlug } from "@/lib/utils";
@@ -65,12 +65,12 @@ function TrendSkeleton() {
   );
 }
 
-export default async function ModelPage({
+export default function ModelPage({
   params,
 }: {
   params: Promise<Params>;
 }) {
-  const { make: makeSlug, model: modelSlug } = await params;
+  const { make: makeSlug, model: modelSlug } = use(params);
   const make = fromSlug(makeSlug);
   const model = fromSlug(modelSlug);
 

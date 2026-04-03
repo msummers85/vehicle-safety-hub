@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
+import { Suspense, use } from "react";
 import { getVehicleData } from "@/lib/nhtsa";
 import { fromSlug } from "@/lib/utils";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
@@ -84,12 +84,12 @@ function ContentSkeleton() {
   );
 }
 
-export default async function YearMakeModelPage({
+export default function YearMakeModelPage({
   params,
 }: {
   params: Promise<Params>;
 }) {
-  const { make: makeSlug, model: modelSlug, year } = await params;
+  const { make: makeSlug, model: modelSlug, year } = use(params);
   const make = fromSlug(makeSlug);
   const model = fromSlug(modelSlug);
 
