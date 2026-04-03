@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { MAKES_LIST } from "@/lib/utils";
 
-const BASE_URL = "https://vehiclesafetyhub.com";
+const BASE_URL = "https://www.vehiclesafetyhub.com";
 
 export default function robots(): MetadataRoute.Robots {
   return {

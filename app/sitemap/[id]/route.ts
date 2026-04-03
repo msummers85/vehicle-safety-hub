@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { MAKES_LIST } from "@/lib/utils";
 import { getModelsForMake } from "@/lib/nhtsa";
 
-const BASE_URL = "https://vehiclesafetyhub.com";
+const BASE_URL = "https://www.vehiclesafetyhub.com";
 const CURRENT_YEAR = 2026;
 const START_YEAR = 2015;
 

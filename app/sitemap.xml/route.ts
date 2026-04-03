@@ -1,6 +1,6 @@
 import { MAKES_LIST } from "@/lib/utils";
 
-const BASE_URL = "https://vehiclesafetyhub.com";
+const BASE_URL = "https://www.vehiclesafetyhub.com";
 
 export async function GET() {
   const sitemaps = [
