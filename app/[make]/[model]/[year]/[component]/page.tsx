@@ -8,7 +8,7 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { RecallCard } from "@/components/RecallCard";
 import { ComplaintTable } from "@/components/ComplaintTable";
 
-import { ComponentPills } from "@/components/ComponentPills";
+
 import { DataProvenance } from "@/components/DataProvenance";
 
 export const revalidate = 604800; // 7 days
@@ -217,6 +217,52 @@ async function ComponentContent({
         </p>
       </div>
 
+      {/* Problem Areas chart */}
+      {allComponents.length > 1 && (
+        <section className="mb-10">
+          <SectionHeading>Problem Areas for the {year} {make} {model}</SectionHeading>
+          <div className="space-y-2">
+            {allComponents.map((c) => {
+              const isActive = c.slug === componentSlug;
+              const maxCount = allComponents[0].count;
+              return (
+                <a
+                  key={c.slug}
+                  href={`${basePath}/${c.slug}`}
+                  className="flex items-center gap-3 no-underline group"
+                >
+                  <span
+                    className="text-sm font-medium w-32 sm:w-40 shrink-0 truncate transition-colors group-hover:underline"
+                    style={{ color: isActive ? "#d32f2f" : "var(--color-text-primary)" }}
+                  >
+                    {c.label}
+                  </span>
+                  <div
+                    className="flex-1 h-6 rounded-full overflow-hidden"
+                    style={{ background: "var(--color-surface)" }}
+                  >
+                    <div
+                      className="h-full rounded-full"
+                      style={{
+                        width: `${(c.count / maxCount) * 100}%`,
+                        background: isActive ? "#d32f2f" : "#e5e5e7",
+                        minWidth: "4px",
+                      }}
+                    />
+                  </div>
+                  <span
+                    className="text-sm tabular-nums w-8 text-right shrink-0 font-medium"
+                    style={{ color: isActive ? "#d32f2f" : "var(--color-text-secondary)" }}
+                  >
+                    {c.count}
+                  </span>
+                </a>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
       {/* Stat cards */}
       <section className="mb-10">
         <div className="grid grid-cols-3 gap-3">
@@ -231,12 +277,6 @@ async function ComponentContent({
         <div className="mt-3">
           <DataProvenance />
         </div>
-      </section>
-
-      {/* Component navigation */}
-      <section className="mb-10">
-        <SectionHeading>Problems by Component</SectionHeading>
-        <ComponentPills components={allComponents} basePath={basePath} activeSlug={componentSlug} />
       </section>
 
       {/* Related recalls */}
@@ -299,3 +339,4 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
     </h2>
   );
 }
+
