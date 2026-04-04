@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { Suspense, use } from "react";
-import { getComplaints } from "@/lib/nhtsa";
+import { Suspense } from "react";
+import { getComplaints, resolveModelName } from "@/lib/nhtsa";
 import { ClickableCard } from "@/components/ClickableCard";
 import { fromSlug } from "@/lib/utils";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
@@ -25,7 +25,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { make: makeSlug, model: modelSlug } = await params;
   const make = fromSlug(makeSlug);
-  const model = fromSlug(modelSlug);
+  const model = await resolveModelName(make, modelSlug);
   const title = `${make} ${model} Recalls & Reliability by Year | Vehicle Safety Hub`;
   const description = `View recalls, complaints, and safety data for the ${make} ${model} by year. Free NHTSA data from ${START_YEAR} to ${CURRENT_YEAR}.`;
   const url = `https://vehiclesafetyhub.com/${makeSlug}/${modelSlug}`;
@@ -65,14 +65,14 @@ function TrendSkeleton() {
   );
 }
 
-export default function ModelPage({
+export default async function ModelPage({
   params,
 }: {
   params: Promise<Params>;
 }) {
-  const { make: makeSlug, model: modelSlug } = use(params);
+  const { make: makeSlug, model: modelSlug } = await params;
   const make = fromSlug(makeSlug);
-  const model = fromSlug(modelSlug);
+  const model = await resolveModelName(make, modelSlug);
 
   const years: number[] = [];
   for (let y = CURRENT_YEAR; y >= START_YEAR; y--) {

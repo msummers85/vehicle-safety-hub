@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { Suspense, use } from "react";
-import { getVehicleData, getComponentCounts } from "@/lib/nhtsa";
+import { Suspense } from "react";
+import { getVehicleData, getComponentCounts, resolveModelName } from "@/lib/nhtsa";
 import { fromSlug } from "@/lib/utils";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { StatBar } from "@/components/StatBar";
@@ -26,7 +26,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { make: makeSlug, model: modelSlug, year } = await params;
   const make = fromSlug(makeSlug);
-  const model = fromSlug(modelSlug);
+  const model = await resolveModelName(make, modelSlug);
 
   const title = `${year} ${make} ${model} Recalls, Problems & Safety | Vehicle Safety Hub`;
   const description = `Check recalls, complaints, and safety ratings for the ${year} ${make} ${model}. Free NHTSA data and known issues.`;
@@ -86,14 +86,14 @@ function ContentSkeleton() {
   );
 }
 
-export default function YearMakeModelPage({
+export default async function YearMakeModelPage({
   params,
 }: {
   params: Promise<Params>;
 }) {
-  const { make: makeSlug, model: modelSlug, year } = use(params);
+  const { make: makeSlug, model: modelSlug, year } = await params;
   const make = fromSlug(makeSlug);
-  const model = fromSlug(modelSlug);
+  const model = await resolveModelName(make, modelSlug);
 
   return (
     <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8">

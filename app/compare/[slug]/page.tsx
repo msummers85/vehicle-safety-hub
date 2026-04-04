@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
-import { getVehicleData } from "@/lib/nhtsa";
+import { getVehicleData, resolveModelName } from "@/lib/nhtsa";
 import { MAKES_LIST, fromSlug } from "@/lib/utils";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { DataProvenance } from "@/components/DataProvenance";
@@ -76,8 +76,13 @@ export async function generateMetadata({
     return { title: "Vehicle Comparison | Vehicle Safety Hub" };
   }
 
-  const title = `${v1.make} ${v1.model} vs ${v2.make} ${v2.model} — Safety Comparison | Vehicle Safety Hub`;
-  const description = `Compare recalls, complaints, and safety ratings between the ${v1.make} ${v1.model} and ${v2.make} ${v2.model}. Free NHTSA data comparison.`;
+  const [model1, model2] = await Promise.all([
+    resolveModelName(v1.make, v1.modelSlug),
+    resolveModelName(v2.make, v2.modelSlug),
+  ]);
+
+  const title = `${v1.make} ${model1} vs ${v2.make} ${model2} — Safety Comparison | Vehicle Safety Hub`;
+  const description = `Compare recalls, complaints, and safety ratings between the ${v1.make} ${model1} and ${v2.make} ${model2}. Free NHTSA data comparison.`;
   const url = `https://vehiclesafetyhub.com/compare/${slug}`;
 
   return {
@@ -135,13 +140,21 @@ export default async function ComparisonPage({
     return <InvalidComparison />;
   }
 
+  // Resolve canonical model names
+  const [model1Name, model2Name] = await Promise.all([
+    resolveModelName(v1.make, v1.modelSlug),
+    resolveModelName(v2.make, v2.modelSlug),
+  ]);
+  v1.model = model1Name;
+  v2.model = model2Name;
+
   return (
     <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8">
       <Breadcrumbs
         items={[
           { label: "Home", href: "/" },
           { label: "Compare", href: "/compare" },
-          { label: `${v1.model} vs ${v2.model}`, href: `/compare/${slug}` },
+          { label: `${model1Name} vs ${model2Name}`, href: `/compare/${slug}` },
         ]}
       />
 
@@ -150,7 +163,7 @@ export default async function ComparisonPage({
           className="text-3xl sm:text-4xl font-semibold tracking-tight"
           style={{ color: "var(--color-text-primary)" }}
         >
-          {v1.make} {v1.model} vs {v2.make} {v2.model}
+          {v1.make} {model1Name} vs {v2.make} {model2Name}
         </h1>
         <p
           className="mt-2 text-lg"

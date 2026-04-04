@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { Suspense, use } from "react";
+import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getVehicleData, classifyComponent, getComponentCounts, COMPONENT_LABELS } from "@/lib/nhtsa";
+import { getVehicleData, classifyComponent, getComponentCounts, COMPONENT_LABELS, resolveModelName } from "@/lib/nhtsa";
 import { fromSlug } from "@/lib/utils";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { RecallCard } from "@/components/RecallCard";
@@ -27,8 +27,8 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { make: makeSlug, model: modelSlug, year, component: componentSlug } = await params;
   const make = fromSlug(makeSlug);
-  const model = fromSlug(modelSlug);
-  const label = COMPONENT_LABELS[componentSlug] ?? fromSlug(componentSlug);
+  const model = await resolveModelName(make, modelSlug);
+  const label = COMPONENT_LABELS[componentSlug] ?? componentSlug;
 
   const title = `${year} ${make} ${model} ${label} Problems & Complaints | Vehicle Safety Hub`;
   const description = `View ${label.toLowerCase()} complaints and recalls for the ${year} ${make} ${model}. Detailed NHTSA data on ${label.toLowerCase()} issues.`;
@@ -69,15 +69,15 @@ function ContentSkeleton() {
   );
 }
 
-export default function ComponentPage({
+export default async function ComponentPage({
   params,
 }: {
   params: Promise<Params>;
 }) {
-  const { make: makeSlug, model: modelSlug, year, component: componentSlug } = use(params);
+  const { make: makeSlug, model: modelSlug, year, component: componentSlug } = await params;
   const make = fromSlug(makeSlug);
-  const model = fromSlug(modelSlug);
-  const label = COMPONENT_LABELS[componentSlug] ?? fromSlug(componentSlug);
+  const model = await resolveModelName(make, modelSlug);
+  const label = COMPONENT_LABELS[componentSlug] ?? componentSlug;
 
   if (!COMPONENT_LABELS[componentSlug]) {
     notFound();

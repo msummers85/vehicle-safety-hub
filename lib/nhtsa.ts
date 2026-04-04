@@ -219,6 +219,16 @@ export function getComponentCounts(
   })).sort((a, b) => b.count - a.count);
 }
 
+/** Resolve a model slug to its canonical NHTSA name via cached API lookup */
+export async function resolveModelName(
+  make: string,
+  modelSlug: string
+): Promise<string> {
+  const models = await getModelsForMake(make);
+  const match = models.find((m) => m.slug === modelSlug);
+  return match?.name ?? modelSlug;
+}
+
 export async function getModelsForMake(
   make: string
 ): Promise<{ id: number; name: string; slug: string }[]> {

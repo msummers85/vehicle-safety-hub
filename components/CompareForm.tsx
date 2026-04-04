@@ -18,12 +18,12 @@ function makeFromSlug(slug: string): string {
 }
 
 /** Parse "toyota-camry" into { makeSlug: "toyota", modelSlug: "camry" } using known makes */
-function parseVehicleParam(param: string): { make: string; modelName: string } | null {
+function parseVehicleParam(param: string): { make: string; modelSlug: string } | null {
   const sorted = [...MAKES_LIST].sort((a, b) => b.slug.length - a.slug.length);
   for (const m of sorted) {
     if (param.startsWith(m.slug + "-")) {
       const modelSlug = param.slice(m.slug.length + 1);
-      if (modelSlug) return { make: m.name, modelName: fromSlug(modelSlug) };
+      if (modelSlug) return { make: m.name, modelSlug };
     }
   }
   return null;
@@ -42,7 +42,7 @@ export function CompareForm() {
   const [model1, setModel1] = useState("");
   const [models1, setModels1] = useState<string[]>([]);
   const [loading1, setLoading1] = useState(false);
-  const pendingModel1 = useRef(prefill?.modelName ?? "");
+  const pendingModelSlug1 = useRef(prefill?.modelSlug ?? "");
 
   const [year2, setYear2] = useState("");
   const [make2, setMake2] = useState("");
@@ -58,13 +58,13 @@ export function CompareForm() {
       .then((r) => r.json())
       .then((data: string[]) => {
         setModels1(data);
-        // Auto-select prefilled model if it exists in the list
-        if (pendingModel1.current) {
+        // Auto-select prefilled model by slug match
+        if (pendingModelSlug1.current) {
           const match = data.find(
-            (m) => m.toLowerCase() === pendingModel1.current.toLowerCase()
+            (m) => toSlug(m) === pendingModelSlug1.current
           );
           if (match) setModel1(match);
-          pendingModel1.current = "";
+          pendingModelSlug1.current = "";
         }
       })
       .catch(() => setModels1([]))
