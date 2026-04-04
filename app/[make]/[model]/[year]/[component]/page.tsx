@@ -204,6 +204,22 @@ async function ComponentContent({
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
 
+      {/* Summary box */}
+      <div
+        className="rounded-xl px-5 py-4 mb-8"
+        style={{ background: "#f0f7ff", border: "1px solid #cce0ff" }}
+      >
+        <p
+          className="text-xs font-semibold uppercase tracking-wide mb-1.5"
+          style={{ color: "var(--color-blue)" }}
+        >
+          Summary
+        </p>
+        <p className="text-sm leading-relaxed" style={{ color: "var(--color-text-primary)" }}>
+          The {year} {make} {model} has {filtered.length} NHTSA {label.toLowerCase()} complaint{filtered.length !== 1 ? "s" : ""} and {relatedRecalls.length} {label.toLowerCase()}-related recall{relatedRecalls.length !== 1 ? "s" : ""}.{mileages.length > 0 ? ` Average failure mileage: ${avgMileage.toLocaleString()} miles.` : ""}
+        </p>
+      </div>
+
       {/* Stat cards */}
       <section className="mb-10">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
