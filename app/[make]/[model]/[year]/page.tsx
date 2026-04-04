@@ -7,7 +7,7 @@ import { StatBar } from "@/components/StatBar";
 import { RecallCard } from "@/components/RecallCard";
 import { ComplaintTable } from "@/components/ComplaintTable";
 import { InternalLinkBlock } from "@/components/InternalLinkBlock";
-import { MileageChart } from "@/components/MileageChart";
+
 import { DataProvenance } from "@/components/DataProvenance";
 import { ComponentPills } from "@/components/ComponentPills";
 
@@ -390,9 +390,6 @@ async function VehicleContent({
           </section>
         );
       })()}
-
-      {/* Depth 2 — Mileage Distribution */}
-      <MileageChart complaints={complaints} />
 
       {/* Depth 3 — Internal Links */}
       <section className="mb-10">

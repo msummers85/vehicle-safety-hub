@@ -3,7 +3,6 @@
 import { useState, useMemo } from "react";
 import type { Complaint } from "@/lib/types";
 
-type SortField = "dateOfIncident" | "mileage";
 type SortDir = "asc" | "desc";
 
 export function ComplaintTable({
@@ -11,41 +10,25 @@ export function ComplaintTable({
 }: {
   complaints: Complaint[];
 }) {
-  const [sortField, setSortField] = useState<SortField>("dateOfIncident");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [showAll, setShowAll] = useState(false);
-  const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const [expandedRow, setExpandedRow] = useState<number | null>(null);
 
   const sorted = useMemo(() => {
     const copy = [...complaints];
     copy.sort((a, b) => {
-      let cmp: number;
-      if (sortField === "mileage") {
-        cmp = (a.mileage ?? 0) - (b.mileage ?? 0);
-      } else {
-        cmp =
-          new Date(a.dateOfIncident).getTime() -
-          new Date(b.dateOfIncident).getTime();
-      }
+      const cmp =
+        new Date(a.dateOfIncident).getTime() -
+        new Date(b.dateOfIncident).getTime();
       return sortDir === "asc" ? cmp : -cmp;
     });
     return copy;
-  }, [complaints, sortField, sortDir]);
+  }, [complaints, sortDir]);
 
   const visible = showAll ? sorted : sorted.slice(0, 20);
 
-  function handleSort(field: SortField) {
-    if (sortField === field) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    } else {
-      setSortField(field);
-      setSortDir("desc");
-    }
-  }
-
-  function sortIndicator(field: SortField) {
-    if (sortField !== field) return "";
-    return sortDir === "asc" ? " \u2191" : " \u2193";
+  function toggleSort() {
+    setSortDir((d) => (d === "asc" ? "desc" : "asc"));
   }
 
   function truncate(text: string, max: number) {
@@ -77,7 +60,7 @@ export function ComplaintTable({
   return (
     <div>
       <div className="overflow-x-auto -mx-4 sm:mx-0">
-        <table className="w-full text-sm min-w-[600px]">
+        <table className="w-full text-sm min-w-[500px]">
           <thead>
             <tr
               style={{
@@ -87,22 +70,15 @@ export function ComplaintTable({
               <th
                 className="text-left py-2.5 px-3 font-medium cursor-pointer select-none"
                 style={{ color: "var(--color-text-secondary)" }}
-                onClick={() => handleSort("dateOfIncident")}
+                onClick={toggleSort}
               >
-                Date{sortIndicator("dateOfIncident")}
+                Date{sortDir === "asc" ? " ↑" : " ↓"}
               </th>
               <th
                 className="text-left py-2.5 px-3 font-medium"
                 style={{ color: "var(--color-text-secondary)" }}
               >
                 Component
-              </th>
-              <th
-                className="text-right py-2.5 px-3 font-medium cursor-pointer select-none"
-                style={{ color: "var(--color-text-secondary)" }}
-                onClick={() => handleSort("mileage")}
-              >
-                Mileage{sortIndicator("mileage")}
               </th>
               <th
                 className="text-left py-2.5 px-3 font-medium"
@@ -139,12 +115,6 @@ export function ComplaintTable({
                     style={{ color: "var(--color-text-primary)" }}
                   >
                     {c.components}
-                  </td>
-                  <td
-                    className="py-2.5 px-3 text-right whitespace-nowrap align-top"
-                    style={{ color: "var(--color-text-secondary)" }}
-                  >
-                    {c.mileage ? c.mileage.toLocaleString() : "—"}
                   </td>
                   <td
                     className="py-2.5 px-3 align-top"

@@ -7,10 +7,9 @@ import { fromSlug } from "@/lib/utils";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { RecallCard } from "@/components/RecallCard";
 import { ComplaintTable } from "@/components/ComplaintTable";
-import { MileageChart } from "@/components/MileageChart";
+
 import { ComponentPills } from "@/components/ComponentPills";
 import { DataProvenance } from "@/components/DataProvenance";
-import type { Complaint, Recall } from "@/lib/types";
 
 export const revalidate = 604800; // 7 days
 
@@ -167,9 +166,7 @@ async function ComponentContent({
   const allComponents = getComponentCounts(complaints).filter((c) => c.count >= 3);
 
   // Stats
-  const mileages = filtered.filter((c) => c.mileage > 0).map((c) => c.mileage);
-  const avgMileage = mileages.length > 0 ? Math.round(mileages.reduce((a, b) => a + b, 0) / mileages.length) : 0;
-  const totalInjuries = filtered.reduce((sum, c) => sum + (c.injuries || 0), 0);
+  const totalInjuries = filtered.reduce((sum, c) => sum + (c.numberOfInjuries || 0), 0);
 
   // JSON-LD
   const breadcrumbJsonLd = {
@@ -193,7 +190,7 @@ async function ComponentContent({
         name: `How many ${label.toLowerCase()} complaints does the ${year} ${make} ${model} have?`,
         acceptedAnswer: {
           "@type": "Answer",
-          text: `The ${year} ${make} ${model} has ${filtered.length} ${label.toLowerCase()} complaint${filtered.length !== 1 ? "s" : ""} on file with NHTSA.${avgMileage > 0 ? ` The average failure mileage is ${avgMileage.toLocaleString()} miles.` : ""}`,
+          text: `The ${year} ${make} ${model} has ${filtered.length} ${label.toLowerCase()} complaint${filtered.length !== 1 ? "s" : ""} on file with NHTSA.`,
         },
       },
     ],
@@ -216,20 +213,15 @@ async function ComponentContent({
           Summary
         </p>
         <p className="text-sm leading-relaxed" style={{ color: "var(--color-text-primary)" }}>
-          The {year} {make} {model} has {filtered.length} NHTSA {label.toLowerCase()} complaint{filtered.length !== 1 ? "s" : ""} and {relatedRecalls.length} {label.toLowerCase()}-related recall{relatedRecalls.length !== 1 ? "s" : ""}.{mileages.length > 0 ? ` Average failure mileage: ${avgMileage.toLocaleString()} miles.` : ""}
+          The {year} {make} {model} has {filtered.length} NHTSA {label.toLowerCase()} complaint{filtered.length !== 1 ? "s" : ""} and {relatedRecalls.length} {label.toLowerCase()}-related recall{relatedRecalls.length !== 1 ? "s" : ""}.
         </p>
       </div>
 
       {/* Stat cards */}
       <section className="mb-10">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           <StatCard value={String(filtered.length)} label="Complaints" color="#f59e0b" />
           <StatCard value={String(relatedRecalls.length)} label="Recalls" color="#d32f2f" />
-          <StatCard
-            value={avgMileage > 0 ? `${(avgMileage / 1000).toFixed(0)}K` : "—"}
-            label="Avg Failure Miles"
-            color="var(--color-text-primary)"
-          />
           <StatCard
             value={String(totalInjuries)}
             label="Injuries Reported"
@@ -258,9 +250,6 @@ async function ComponentContent({
           </div>
         </section>
       )}
-
-      {/* Mileage chart */}
-      <MileageChart complaints={filtered} />
 
       {/* Complaint table */}
       <section className="mb-10">

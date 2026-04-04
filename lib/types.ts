@@ -16,19 +16,24 @@ export interface Recall {
 }
 
 export interface Complaint {
-  odiNumber: string;
+  odiNumber: number;
+  manufacturer: string;
   components: string;
   summary: string;
   dateOfIncident: string;
   dateComplaintFiled: string;
-  mileage: number;
   crash: boolean;
   fire: boolean;
-  injuries: number;
-  deaths: number;
-  make: string;
-  model: string;
-  modelYear: string;
+  numberOfInjuries: number;
+  numberOfDeaths: number;
+  vin: string;
+  products: {
+    type: string;
+    productYear: string;
+    productMake: string;
+    productModel: string;
+    manufacturer: string;
+  }[];
 }
 
 export interface SafetyRating {
