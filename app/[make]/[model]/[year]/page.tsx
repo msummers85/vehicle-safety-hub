@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense, use } from "react";
-import { getVehicleData } from "@/lib/nhtsa";
+import { getVehicleData, getComponentCounts } from "@/lib/nhtsa";
 import { fromSlug } from "@/lib/utils";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { StatBar } from "@/components/StatBar";
@@ -9,6 +9,7 @@ import { ComplaintTable } from "@/components/ComplaintTable";
 import { InternalLinkBlock } from "@/components/InternalLinkBlock";
 import { MileageChart } from "@/components/MileageChart";
 import { DataProvenance } from "@/components/DataProvenance";
+import { ComponentPills } from "@/components/ComponentPills";
 
 export const revalidate = 86400;
 
@@ -374,6 +375,21 @@ async function VehicleContent({
           </div>
         )}
       </section>
+
+      {/* Depth 2 — Problems by Component */}
+      {(() => {
+        const componentCounts = getComponentCounts(complaints).filter((c) => c.count >= 3);
+        if (componentCounts.length === 0) return null;
+        return (
+          <section className="mb-10">
+            <SectionHeading>Problems by Component</SectionHeading>
+            <ComponentPills
+              components={componentCounts}
+              basePath={`/${makeSlug}/${modelSlug}/${year}`}
+            />
+          </section>
+        );
+      })()}
 
       {/* Depth 2 — Mileage Distribution */}
       <MileageChart complaints={complaints} />
