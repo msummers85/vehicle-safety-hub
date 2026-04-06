@@ -8,7 +8,7 @@ import { DataProvenance } from "@/components/DataProvenance";
 import { RecallCard } from "@/components/RecallCard";
 import type { Recall } from "@/lib/types";
 
-export const revalidate = 86400;
+export const revalidate = 604800;
 
 export const metadata: Metadata = {
   title: "Recent Vehicle Safety Recalls | Vehicle Safety Hub",

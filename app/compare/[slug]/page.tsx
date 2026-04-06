@@ -7,7 +7,7 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { DataProvenance } from "@/components/DataProvenance";
 import type { VehicleData } from "@/lib/types";
 
-export const revalidate = 86400;
+export const revalidate = 604800;
 
 type Params = { slug: string };
 

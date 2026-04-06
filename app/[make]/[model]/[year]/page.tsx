@@ -11,7 +11,7 @@ import { InternalLinkBlock } from "@/components/InternalLinkBlock";
 import { DataProvenance } from "@/components/DataProvenance";
 import { ComponentPills } from "@/components/ComponentPills";
 
-export const revalidate = 86400; // 24h ISR
+export const revalidate = 604800;
 
 type Params = { make: string; model: string; year: string };
 

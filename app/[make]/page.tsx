@@ -6,7 +6,7 @@ import { ClickableCard } from "@/components/ClickableCard";
 import { fromSlug, toSlug } from "@/lib/utils";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 
-export const revalidate = 86400;
+export const revalidate = 604800;
 
 type Params = { make: string };
 

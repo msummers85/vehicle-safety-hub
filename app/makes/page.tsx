@@ -3,7 +3,7 @@ import { MAKES_LIST } from "@/lib/utils";
 import { ClickableCard } from "@/components/ClickableCard";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 
-export const revalidate = 86400;
+export const revalidate = 604800;
 
 export const metadata: Metadata = {
   title: "All Vehicle Makes — Safety Data & Recalls | Vehicle Safety Hub",

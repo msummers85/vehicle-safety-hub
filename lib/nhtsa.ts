@@ -16,7 +16,7 @@ const ALL_MAKES_API =
 const MODELS_API =
   "https://vpic.nhtsa.dot.gov/api/vehicles/GetModelsForMake";
 
-const fetchOptions: RequestInit = { next: { revalidate: 86400 } };
+const fetchOptions: RequestInit = { next: { revalidate: 604800 } };
 
 export async function getRecalls(
   make: string,

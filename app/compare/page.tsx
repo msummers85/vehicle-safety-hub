@@ -4,7 +4,7 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { CompareForm } from "@/components/CompareForm";
 import Link from "next/link";
 
-export const revalidate = 86400;
+export const revalidate = 604800;
 
 export const metadata: Metadata = {
   title: "Compare Vehicle Safety | Vehicle Safety Hub",

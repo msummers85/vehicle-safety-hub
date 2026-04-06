@@ -6,7 +6,7 @@ import { fromSlug } from "@/lib/utils";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ComplaintTrendChart } from "@/components/ComplaintTrendChart";
 
-export const revalidate = 86400;
+export const revalidate = 604800;
 
 type Params = { make: string; model: string };
 

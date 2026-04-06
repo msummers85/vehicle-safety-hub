@@ -6,7 +6,7 @@ import { DataProvenance } from "@/components/DataProvenance";
 import { toSlug } from "@/lib/utils";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 
-export const revalidate = 86400;
+export const revalidate = 604800;
 
 export const metadata: Metadata = {
   title: "Vehicles with Zero Recalls | Vehicle Safety Hub",
